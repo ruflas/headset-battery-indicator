@@ -4,7 +4,6 @@ A simple, lightweight Python script that displays the battery level of your wire
 
 It uses **PySide6 (Qt)** for the tray icon, making it compatible with most modern desktop environments such as **KDE Plasma**, **GNOME**, **XFCE**, and **Cinnamon**.
 
-
 ![Screenshot of the tray icon](screenshot.png)
 ---
 
@@ -19,11 +18,15 @@ All credit for hardware communication and device support goes to the [Sapd/Heads
 
 ## ✨ Features
 
-- Displays a dynamic tray icon that reflects the current battery level.
-- Shows a charging icon when the device is plugged in.
-- Updates automatically every 60 seconds.
-- Displays the device name (from `headsetcontrol`) in the tooltip.
-- Extremely low resource usage.
+* **Dynamic Tray Icon:** Displays battery level and charging status at a glance.
+* **Configurable Notifications:** Get a desktop notification (and a headset sound!) when your battery drops below a level you choose.
+* **Full Context Menu:** Right-click the icon to:
+    * See the connected device name and status.
+    * Enable or disable low-battery notifications.
+    * Set the notification threshold (10%, 20%, 30%, etc.).
+* **Persistent Settings:** Remembers your notification preferences after a restart.
+* **Tooltip Info:** Hover over the icon to see the device name and battery percentage.
+* **Extremely low resource usage.**
 
 ---
 
@@ -74,3 +77,19 @@ python3 headsetcontrol_tray.py
 ```
 
 Optionally, you can add it to your **startup applications** so it runs automatically when you log in.
+
+### Configuration (Right-Click Menu)
+
+This indicator is now fully configurable. **Right-click the tray icon** at any time to:
+
+* **Enable/Disable Notifications:** Toggle the "Notify on low battery" option.
+* **Set Notification Level:** Open the "Set Notification Level" submenu and choose the percentage at which you want to be warned.
+
+Your preferences are saved automatically and will be reloaded the next time you start the script.
+![Screenshot of configuration](screenshot2.png)
+### Command-line Arguments
+
+You can also launch the script with these arguments:
+
+* `-h` or `--help`: Shows a help message with all available options and exits.
+* `-debug`: Launches in interactive debug mode. This allows you to type commands directly into the terminal (like `notification` or `setIcon battery-100-symbolic`) to test the script's behavior in real-time.
