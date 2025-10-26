@@ -1,150 +1,162 @@
 # 🎧 Headset Battery Indicator
 
-A simple, lightweight Python script that displays the battery level of your wireless headset in your Linux system tray.
+[![License](https://img.shields.io/github/license/ruflas/headset-battery-indicator)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/ruflas/headset-battery-indicator)](https://github.com/ruflas/headset-battery-indicator/releases)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 
-It uses **PySide6 (Qt)** for the tray icon, making it compatible with most modern desktop environments such as **KDE Plasma**, **GNOME**, **XFCE**, and **Cinnamon**.
+A lightweight, modern tray indicator that shows your **wireless headset’s battery level**, **charging status**, and lets you **control LEDs and sidetone** — all powered by [HeadsetControl](https://github.com/Sapd/HeadsetControl).
+
+It uses **PySide6 (Qt)** for the graphical interface and works seamlessly with **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desktop environments.
 
 ![Screenshot of the tray icon](screenshot.png)
 
 ---
-## ⭐ Core Dependency: HeadsetControl
 
-This script **does not work on its own** — it is a graphical front-end that relies entirely on the **[HeadsetControl](https://github.com/Sapd/HeadsetControl)** utility.
-
-You **must** install `headsetcontrol` for this indicator to function.  
-All credit for hardware communication and device support goes to the [Sapd/HeadsetControl](https://github.com/Sapd/HeadsetControl) project.
+## 📘 Table of Contents
+- [About](#about)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Option 1: AppImage (Recommended)](#option-1-appimage-recommended)
+  - [Option 2: From Source](#option-2-from-source)
+- [Usage](#usage)
+- [Command-Line Options](#command-line-options)
+- [Autostart](#autostart)
 
 ---
-## 🚀 How to Get It
 
-You have two options to install the indicator. The AppImage is the recommended method for most users.
+## 💡 About
 
-### Option 1: AppImage (Recommended)
+`Headset Battery Indicator` is a simple GUI front-end for [HeadsetControl](https://github.com/Sapd/HeadsetControl).  
+It provides a clean and convenient way to monitor your headset battery and manage device options directly from your system tray — without opening a terminal.
 
-This is the simplest way. You get a single executable file that runs on almost any Linux distribution (Fedora, Ubuntu, Arch, etc.) without needing to install Python or PySide6.
-**Remember to install HeadsetControl first**
+> ⚠️ This tool **depends entirely on HeadsetControl** for hardware communication.  
+> Make sure `headsetcontrol` is installed and working on your system before running this indicator.
 
-1.  **[Download the latest `.AppImage` from the Releases page.]**
-    (https://github.com/ruflas/headset-battery-indicator/releases/latest)
-
-2.  Make the file executable:
-    ```bash
-    chmod +x Headset_Battery_Indicator-*.AppImage
-    ```
-
-3.  Run it!
-    ```bash
-    ./Headset_Battery_Indicator-*.AppImage
-    ```
-    (You can move this file to a safe directory, like `~/.local/bin`, and add it to your desktop's "Autostart" applications).
-
-### Option 2: From Source (Advanced)
-
-If you are a developer or prefer to build from source, you can install the script using `pip` and the `pyproject.toml` file included in this repository.
-
-1.  **Install Dependencies**
-
-    You must install the core requirements from your system's package manager first:
-    ```bash
-    # On Fedora:
-    sudo dnf install headsetcontrol python3-pyside6
-    
-    # On Debian/Ubuntu:
-    # (headsetcontrol may need to be built from source if not in your repo)
-    sudo apt install headsetcontrol python3-pyside6
-    ```
-
-2.  **Clone and Install**
-
-    ```bash
-    git clone [https://github.com/ruflas/headset-battery-indicator.git](https://github.com/ruflas/headset-battery-indicator.git)
-    cd headset-battery-indicator
-    
-    # Install the script into your system's Python path
-    pip install .
-    ```
-    After this, you can run the indicator from your terminal just by typing `headset-battery-indicator`.
 ---
 
 ## ✨ Features
 
-* **Dynamic Tray Icon:** Displays battery level and charging status at a glance.
-* **Configurable Notifications:** Get a desktop notification (and a headset sound!) when your battery drops below a level you choose.
-* **Full Context Menu:** Right-click the icon to:
-    * See the connected device name and status.
-    * Enable or disable low-battery notifications.
-    * Set the notification threshold (10%, 20%, 30%, etc.).
-* **Persistent Settings:** Remembers your notification preferences after a restart.
-* **Tooltip Info:** Hover over the icon to see the device name and battery percentage.
-* **Extremely low resource usage.**
-
+- **Dynamic Tray Icon** — Displays live battery percentage and charging state.
+- **Custom Notifications** — Low-battery alerts with optional headset sound.
+- **Device Control** — Toggle LEDs and adjust sidetone directly.
+- **Context Menu** — Right-click for quick access to status and settings.
+- **Persistent Configuration** — Saves preferences between sessions.
+- **Low Resource Usage** — Lightweight and non-intrusive background service.
+- **Device Info** - Shows headset name and current status.
+- **Sidetone Control** - Adjust microphone sidetone volume.
 ---
 
 ## 🧩 Requirements
 
-1. **[HeadsetControl](https://github.com/Sapd/HeadsetControl)** (Required)
-2. **Python 3**
-3. **PySide6** (Qt for Python)
+| Dependency | Required | Description |
+|-------------|-----------|-------------|
+| [HeadsetControl](https://github.com/Sapd/HeadsetControl) | ✅ | Hardware communication backend |
+| Python 3 | ✅ | Runtime environment |
+| PySide6 | ✅ | GUI framework (Qt for Python) |
 
 ---
 
-## ⚙️ If you just want to use the .py file script
+## 🚀 Installation
 
-### 1. Install Dependencies
+### Option 1: AppImage (Recommended)
 
-Make sure you have `headsetcontrol` and `python3-pyside6` installed via your package manager.
+This is the easiest way to run the indicator — no need to install Python or dependencies (just headsetcontrol).
 
-```bash
-# On Fedora:
-sudo dnf install headsetcontrol python3-pyside6
+> **Make sure `headsetcontrol` is installed first.**
 
-# On Debian/Ubuntu:
-# (headsetcontrol may need to be built from source if not in your repo)
-sudo apt install python3-pyside6 headsetcontrol
-```
+1. **Download the latest AppImage**
+   from the [Releases page](https://github.com/ruflas/headset-battery-indicator/releases/latest).
 
-### 2. Clone the Repository
+2. **Make it executable:**
+   ```bash
+   chmod +x Headset_Battery_Indicator-*.AppImage
+   ```
 
-```bash
-git clone https://github.com/ruflas/headset-battery-indicator.git
-cd headset-battery-indicator
-```
+3. **Run it:**
+   ```bash
+   ./Headset_Battery_Indicator-*.AppImage
+   ```
 
-### 3. Make the Script Executable
-
-```bash
-chmod +x headsetcontrol_tray.py
-```
+You can move it to a folder like `~/.local/bin` and add it to your desktop’s “Autostart” list.
 
 ---
 
-## ⚙️ Usage & Configuration
+### Option 2: From Source (Advanced)
 
-### Right-Click Menu
-This indicator is fully configurable. **Right-click the tray icon** at any time to:
+If you prefer to run the Python script directly or contribute to the code:
 
-* **Enable/Disable Notifications:** Toggle the "Notify on low battery" option.
-* **Set Notification Level:** Choose the percentage for the low battery warning.
-* **Toggle Headset Lights:** Enable or disable your headset's LEDs.
-* **Set Sidetone Level:** Select your preferred sidetone volume from the submenu.
+1. **Install Dependencies**
 
-Your preferences are saved automatically and will be reloaded the next time you start the script.
+   ```bash
+   # Fedora:
+   sudo dnf install headsetcontrol python3-pyside6
 
-### Command-line Arguments
-You can also launch the script with these arguments:
+   # Debian/Ubuntu:
+   sudo apt install headsetcontrol python3-pyside6
+   ```
 
-* `-h` or `--help`: Shows a help message with all available options and exits.
-* `-debug`: Launches in interactive debug mode. This allows you to type commands directly into the terminal (like `notification` or `setIcon battery-100-symbolic`) to test the script's behavior in real-time.
+2. **Clone and Install**
 
-### Run on Startup (Autostart)
-To run the script automatically when you log in:
+   ```bash
+   git clone https://github.com/ruflas/headset-battery-indicator.git
+   cd headset-battery-indicator
+   pip install .
+   ```
 
-1.  Open your **System Settings** / Control Panel.
-2.  Go to **Startup and Shutdown** > **Autostart** (in KDE) or "Startup Applications" (in GNOME/XFCE).
-3.  Add a new entry.
-4.  In the "Command" field, enter:
-    * **If you used the AppImage:** `/full/path/to/Headset_Battery_Indicator-*.AppImage`
-    * **If you installed from source:** `headset-battery-indicator`
+3. **Run**
+   ```bash
+   headset-battery-indicator
+   ```
 
-Your preferences are saved automatically and will be reloaded the next time you start the script.
+4. **Run just the script**
+    ```bash
+    python headset_battery_indicator.py
+    ```
+---
+
+## ⚙️ Usage
+
+Once launched, the indicator will appear in your system tray.
+
+### 🖱️ Right-Click Menu
+The context menu provides:
+- **Device Info:** Shows headset name and current status.
+- **Notifications:** Enable or disable low-battery alerts.
+- **Threshold Setting:** Choose the battery level for notifications (10%, 20%, 30%, etc.).
+- **LED Control:** Turn headset lighting on or off.
+- **Sidetone Control:** Adjust microphone sidetone volume.
+
+All your preferences are automatically saved.
+
 ![Screenshot of configuration](screenshot2.png)
+
+---
+
+## 🧠 Command-Line Options
+
+You can launch the app with optional arguments:
+
+| Option | Description |
+|--------|--------------|
+| `-h`, `--help` | Show help message and exit |
+| `-debug` | Enable interactive debug mode (type commands like `notification` or `setIcon battery-100-symbolic`) |
+
+Example:
+```bash
+./Headset_Battery_Indicator-*.AppImage -debug
+```
+
+---
+
+## 🔄 Autostart
+
+To run the indicator automatically on login:
+
+1. Open your **System Settings**.
+2. Go to **Startup and Shutdown** → **Autostart** (KDE) or **Startup Applications** (GNOME/XFCE).
+3. Add a new entry:
+   - **AppImage:** `/full/path/to/Headset_Battery_Indicator-*.AppImage`
+   - **Source install:** `headset-battery-indicator`
+
+Your settings and preferences will be restored automatically each time.
