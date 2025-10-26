@@ -19,12 +19,11 @@ All credit for hardware communication and device support goes to the [Sapd/Heads
 ## ✨ Features
 
 * **Dynamic Tray Icon:** Displays battery level and charging status at a glance.
+* **Full Headset Control:** Right-click the icon to:
+    * **Control headset lights** (On/Off).
+    * **Set Sidetone level** (Off, Low, Medium, etc.).
 * **Configurable Notifications:** Get a desktop notification (and a headset sound!) when your battery drops below a level you choose.
-* **Full Context Menu:** Right-click the icon to:
-    * See the connected device name and status.
-    * Enable or disable low-battery notifications.
-    * Set the notification threshold (10%, 20%, 30%, etc.).
-* **Persistent Settings:** Remembers your notification preferences after a restart.
+* **Persistent Settings:** Remembers all your preferences (lights, sidetone, and notification level) and automatically applies them every time the script starts.
 * **Tooltip Info:** Hover over the icon to see the device name and battery percentage.
 * **Extremely low resource usage.**
 
