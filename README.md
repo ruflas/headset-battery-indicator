@@ -4,6 +4,8 @@ A simple, lightweight Python script that displays the battery level of your wire
 
 It uses **PySide6 (Qt)** for the tray icon, making it compatible with most modern desktop environments such as **KDE Plasma**, **GNOME**, **XFCE**, and **Cinnamon**.
 
+
+![Screenshot of the tray icon](screenshot.png)
 ---
 
 ## ⭐ Core Dependency: HeadsetControl
@@ -72,5 +74,3 @@ python3 headsetcontrol_tray.py
 ```
 
 Optionally, you can add it to your **startup applications** so it runs automatically when you log in.
-
-![Screenshot of the tray icon](screenshot.png)
