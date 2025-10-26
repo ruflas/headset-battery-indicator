@@ -88,7 +88,7 @@ If you are a developer or prefer to build from source, you can install the scrip
 
 ---
 
-## ⚙️ Installation
+## ⚙️ If you just want to use the .py file script
 
 ### 1. Install Dependencies
 
