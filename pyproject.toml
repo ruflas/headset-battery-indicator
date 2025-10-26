@@ -24,6 +24,38 @@ dependencies = [
 ]
 
 [project.scripts]
-headset-battery-indicator = "headsetcontrol_tray:main" # "headset-battery-indicator" es el comando que se crea
-                                                      # "headsetcontrol_tray" es el nombre de tu archivo .py
-                                                      # ":main" es la función que debe ejecutar
+# <--- CAMBIO AQUÍ
+headset-battery-indicator = "headset_battery_indicator.__main__:main"
+
+# --- NUEVA SECCIÓN PARA BRIEFCASE ---
+[tool.briefcase]
+project_name = "Headset Battery Indicator"
+bundle = "dev.ruflas"
+version = "1.1.0"
+app_name = "headset_battery_indicator"
+
+# Define la aplicación
+[tool.briefcase.app.headset-battery-indicator]
+
+formal_name = "Headset Battery Indicator"
+description = "A system tray icon to monitor headset battery levels"
+
+# El script principal
+sources = ["headset_battery_indicator"]
+
+# Dependencias de Python
+requires = [
+    "PySide6",
+]
+
+# --- Configuración del AppImage de Linux ---
+[tool.briefcase.app.headset-battery-indicator.linux.appimage]
+# Dependencias del sistema que Qt necesita (NOMBRES PARA YUM/FEDORA)
+system_requires = [
+    "pulseaudio-libs", 
+    "mesa-libGL", 
+    "glib2"
+]
+
+# SDK de Linux (Ubuntu 20.04)
+manylinux = "manylinux_2_28"
