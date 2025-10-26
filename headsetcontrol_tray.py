@@ -19,7 +19,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.settings = QSettings()
         self.load_settings()
 
-        # NEW: Apply saved settings (lights, sidetone) on startup
+        # Apply saved settings (lights, sidetone) on startup
         self.apply_saved_settings()
 
         self.menu = QMenu()
@@ -52,7 +52,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.notify_threshold = self.settings.value("notifyThreshold", 20, type=int)
         self.notified_low_battery = False
         
-        # NEW: Load control settings
         self.lights_on = self.settings.value("lightsOn", True, type=bool)
         self.sidetone_level = self.settings.value("sidetoneLevel", 0, type=int)
 
@@ -109,7 +108,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.sidetone_group = QActionGroup(self)
         self.sidetone_group.setExclusive(True)
         
-        # Sidetone levels (Text: value)
         sidetone_options = {"Off": 0, "Low": 32, "Medium": 64, "High": 96, "Max": 128}
         
         for text, level in sidetone_options.items():
@@ -136,12 +134,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         """Helper to run headsetcontrol commands safely."""
         command = ['headsetcontrol'] + args_list
         try:
-            # Run and check for errors
             subprocess.run(command, check=True, capture_output=True, text=True)
             print(f"Ran command: {' '.join(command)}")
         except Exception as e:
             print(f"Error running command: {' '.join(command)}: {e}")
-            # Notify user that the command failed
             self.send_notification(
                 "Headset Command Failed",
                 f"Failed to run: {' '.join(command)}\nIs it connected?"
@@ -150,10 +146,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
     def apply_saved_settings(self):
         """Applies saved settings to the headset on startup."""
         print("Applying saved settings...")
-        # Apply lights
         light_val = "1" if self.lights_on else "0"
         self.run_headset_command(['-l', light_val])
-        # Apply sidetone
         self.run_headset_command(['-s', str(self.sidetone_level)])
 
 
@@ -218,7 +212,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.settings.setValue("notifyThreshold", self.notify_threshold)
         self.notified_low_battery = False
 
-    # --- NEW: Control Callbacks ---
     def on_lights_toggled(self, checked):
         """Called when the user toggles the lights."""
         self.lights_on = checked
@@ -324,7 +317,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.info_status_action.setText(f"Status: {tooltip_status}")
 
 # --- Main execution block ---
-if __name__ == "__main__":
+def main():
+    """Main function to run the application."""
     
     if "-h" in sys.argv or "--help" in sys.argv:
         HELP_TEXT = textwrap.dedent("""
@@ -364,3 +358,7 @@ if __name__ == "__main__":
     tray_icon = HeadsetBatteryTray(debug_mode=debug_mode)
     
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()

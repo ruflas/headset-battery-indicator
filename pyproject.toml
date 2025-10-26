@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "headset-battery-indicator"
+version = "1.1.0"
+authors = [
+    { name = "Ruflas", email = "ruflas@ruflas.dev" },
+]
+description = "A system tray icon to monitor headset battery levels, based on HeadsetControl."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: X11 Applications :: Qt",
+]
+# Aquí le dices a pip qué dependencias instalar
+dependencies = [
+    "PySide6",
+]
+
+[project.scripts]
+headset-battery-indicator = "headsetcontrol_tray:main" # "headset-battery-indicator" es el comando que se crea
+                                                      # "headsetcontrol_tray" es el nombre de tu archivo .py
+                                                      # ":main" es la función que debe ejecutar
