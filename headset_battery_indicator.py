@@ -19,7 +19,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.settings = QSettings()
         self.load_settings()
 
-        # Apply saved settings (lights, sidetone) on startup
+        # Apply saved settings (lights, sidetone, chatmix, inactive time) on startup
         self.apply_saved_settings()
 
         self.menu = QMenu()
@@ -54,6 +54,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         
         self.lights_on = self.settings.value("lightsOn", True, type=bool)
         self.sidetone_level = self.settings.value("sidetoneLevel", 0, type=int)
+        
+        # --- NUEVO: Carga ChatMix y Inactive Time ---
+        self.chatmix_level = self.settings.value("chatmixLevel", 64, type=int)
+        self.inactive_time = self.settings.value("inactiveTime", 0, type=int)
 
 
     def setup_menu(self):
@@ -93,7 +97,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.threshold_group.triggered.connect(self.on_threshold_changed)
         self.menu.addMenu(self.threshold_menu)
         
-        # --- NEW: Controls Section ---
+        # --- Controls Section ---
         self.menu.addSeparator()
 
         # 1. Lights Toggle
@@ -121,6 +125,51 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             
         self.sidetone_group.triggered.connect(self.on_sidetone_changed)
         self.menu.addMenu(self.sidetone_menu)
+        
+        # --- NUEVO: ChatMix Submenu ---
+        self.chatmix_menu = QMenu("Set ChatMix Level")
+        self.chatmix_group = QActionGroup(self)
+        self.chatmix_group.setExclusive(True)
+        
+        chatmix_options = {
+            "Game Max (0)": 0, 
+            "Game Bias (32)": 32, 
+            "Center (64)": 64, 
+            "Chat Bias (96)": 96, 
+            "Chat Max (128)": 128
+        }
+        
+        for text, level in chatmix_options.items():
+            action = QAction(text, self)
+            action.setCheckable(True)
+            action.setData(level)
+            if level == self.chatmix_level:
+                action.setChecked(True)
+            self.chatmix_menu.addAction(action)
+            self.chatmix_group.addAction(action)
+            
+        self.chatmix_group.triggered.connect(self.on_chatmix_changed)
+        self.menu.addMenu(self.chatmix_menu)
+        
+        # --- NUEVO: Inactive Time Submenu ---
+        self.inactivetime_menu = QMenu("Set Auto-Off Time (Min)")
+        self.inactivetime_group = QActionGroup(self)
+        self.inactivetime_group.setExclusive(True)
+        
+        time_options = {"Disabled (0)": 0, "10 min": 10, "30 min": 30, "60 min": 60, "90 min": 90}
+        
+        for text, minutes in time_options.items():
+            action = QAction(text, self)
+            action.setCheckable(True)
+            action.setData(minutes)
+            if minutes == self.inactive_time:
+                action.setChecked(True)
+            self.inactivetime_menu.addAction(action)
+            self.inactivetime_group.addAction(action)
+
+        self.inactivetime_group.triggered.connect(self.on_inactivetime_changed)
+        self.menu.addMenu(self.inactivetime_menu)
+
 
         # --- Exit Section ---
         self.menu.addSeparator()
@@ -129,7 +178,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.menu.addAction(quit_action)
 
     # --- NEW: Helper Functions ---
-
+    # ******* ESTA FUNCIÓN DEBE SER REEMPLAZADA POR TU FUNCIÓN CON LA LÓGICA DE BÚSQUEDA DE BINARIO *******
+    # La versión siguiente es la versión simple del usuario.
     def run_headset_command(self, args_list):
         """Helper to run headsetcontrol commands safely."""
         command = ['headsetcontrol'] + args_list
@@ -149,6 +199,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         light_val = "1" if self.lights_on else "0"
         self.run_headset_command(['-l', light_val])
         self.run_headset_command(['-s', str(self.sidetone_level)])
+        
+        # --- NUEVO: Aplica ChatMix y Auto-Off ---
+        self.run_headset_command(['-m', str(self.chatmix_level)])
+        self.run_headset_command(['-i', str(self.inactive_time)])
 
 
     # --- Debug Command Handler ---
@@ -225,6 +279,23 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.sidetone_level = level
         self.settings.setValue("sidetoneLevel", self.sidetone_level)
         self.run_headset_command(['-s', str(level)])
+        
+    # --- NUEVO: ChatMix Callback ---
+    def on_chatmix_changed(self, action):
+        """Called when the user changes the ChatMix level."""
+        level = action.data()
+        self.chatmix_level = level
+        self.settings.setValue("chatmixLevel", self.chatmix_level)
+        self.run_headset_command(['-m', str(level)])
+
+    # --- NUEVO: Inactive Time Callback ---
+    def on_inactivetime_changed(self, action):
+        """Called when the user changes the inactive auto-off time."""
+        minutes = action.data()
+        self.inactive_time = minutes
+        self.settings.setValue("inactiveTime", self.inactive_time)
+        self.run_headset_command(['-i', str(minutes)])
+
 
     # --- Main Functions ---
 
