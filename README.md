@@ -47,6 +47,7 @@ It provides a clean and convenient way to monitor your headset battery and manag
 - **Sidetone Control** - Adjust microphone sidetone volume.
 - **ChatMix Control:** Added a new submenu to precisely set the ChatMix level (0-128, with presets like "Game Max," "Center," and "Chat Max").
 - **Auto-Off Time Setting:** Added a menu to configure the automatic power-off time (0, 10, 30, 60, or 90 minutes), preventing the headset from dying when idle.
+- **Advanced Diagnostics (New!)**: Includes a permanent, rotating log file (app.log) and a dedicated -debug mode with commands (log-test, setIcon) for easy troubleshooting and user support.
 ---
 
 ## 🧩 Requirements
