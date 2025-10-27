@@ -45,6 +45,8 @@ It provides a clean and convenient way to monitor your headset battery and manag
 - **Low Resource Usage** — Lightweight and non-intrusive background service.
 - **Device Info** - Shows headset name and current status.
 - **Sidetone Control** - Adjust microphone sidetone volume.
+- **ChatMix Control:** Added a new submenu to precisely set the ChatMix level (0-128, with presets like "Game Max," "Center," and "Chat Max").
+- **Auto-Off Time Setting:** Added a menu to configure the automatic power-off time (0, 10, 30, 60, or 90 minutes), preventing the headset from dying when idle.
 ---
 
 ## 🧩 Requirements
