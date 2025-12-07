@@ -300,10 +300,17 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         # --- Log Folder Utilities (For Debugging/Support) ---
         
     def open_log_folder(self):
-        """Opens the log folder in the file explorer."""
+        """Opens the log folder in the file explorer (Cross-platform)."""
         logger.info(f"Opening log folder: {LOG_DIR}")
         try:
-            subprocess.run(['xdg-open', LOG_DIR], check=True, text=True)
+            # Detect if the OS is Windows
+            if os.name == 'nt':
+                os.startfile(LOG_DIR)
+            # Detect if the OS is macosX (darwin) o Linux
+            else:
+                opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
+                subprocess.run([opener, LOG_DIR], check=True)
+                
         except Exception as e:
             logger.error(f"Failed to open log folder: {e}")
             self.send_notification("Error", "Could not open log folder.")

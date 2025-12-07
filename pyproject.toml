@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "headset-battery-indicator"
-version = "1.4.0"
+version = "1.4.1"
 authors = [
     { name = "Ruflas", email = "ruflas@ruflas.dev" },
 ]
@@ -31,7 +31,7 @@ headset-battery-indicator = "headset_battery_indicator.__main__:main"
 [tool.briefcase]
 project_name = "Headset Battery Indicator"
 bundle = "dev.ruflas"
-version = "1.4.0"
+version = "1.4.1"
 app_name = "headset_battery_indicator"
 
 # Define la aplicación
