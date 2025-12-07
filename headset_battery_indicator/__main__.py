@@ -8,8 +8,9 @@ import textwrap
 import os
 import logging
 import shutil
+import threading
 from logging.handlers import RotatingFileHandler 
-from PySide6.QtCore import QTimer, QSettings, QSocketNotifier
+from PySide6.QtCore import QTimer, QSettings, QSocketNotifier , Signal, Slot
 from PySide6.QtGui import QIcon, QAction, QActionGroup
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
@@ -61,12 +62,18 @@ logger = setup_logging()
 # --- END LOGGING SETUP ---
 
 class HeadsetBatteryTray(QSystemTrayIcon):
+    command_received = Signal(str)
     def __init__(self, debug_mode=False, parent=None):
         super().__init__(parent)
         self.debug_mode = debug_mode
-        base_path = os.path.dirname(os.path.abspath(__file__))
+
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            
         self.icons_dir = os.path.join(base_path, 'icons')
-        # Reconfigure logger for console output if in debug mode
+        
         if debug_mode:
             global logger
             logger = setup_logging(debug_to_console=True) 
@@ -77,10 +84,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.settings = QSettings()
         self.load_settings()
 
-        # Initialize and set headsetcontrol_path using robust search
         self.headsetcontrol_path = self._find_headsetcontrol()
         
-        # B. DEPENDENCY CHECK AND ERROR MESSAGE
         if not self.headsetcontrol_path:
             logger.critical("HeadsetControl binary not found. Functionality disabled.")
             self.send_notification(
@@ -99,7 +104,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_status)
         
-        # Only start timer if binary is found
         if self.headsetcontrol_path:
             self.timer.start(UPDATE_INTERVAL_MS)
             
@@ -118,8 +122,18 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             print("  exit                 (quits the application)")
             print("------------------------------------")
             
-            self.stdin_notifier = QSocketNotifier(sys.stdin.fileno(), QSocketNotifier.Type.Read, self)
-            self.stdin_notifier.activated.connect(self.handle_debug_command)
+            self.command_received.connect(self.handle_debug_command)
+
+            def console_listener():
+                while True:
+                    try:
+                        line = sys.stdin.readline()
+                        if line:
+                            self.command_received.emit(line.strip())
+                    except ValueError:
+                        break
+            t = threading.Thread(target=console_listener, daemon=True)
+            t.start()
 
     def _find_headsetcontrol(self):
         """Searches for the headsetcontrol binary using AppImage logic and system PATH."""
@@ -374,10 +388,11 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
 
     # --- Debug Command Handler ---
-    def handle_debug_command(self):
-        """Processes commands from stdin in debug mode."""
+    @Slot(str)
+    def handle_debug_command(self, line):
+        """Processes commands received from the console thread."""
         try:
-            line = sys.stdin.readline().strip()
+            # We use now 'line' that is an argument
             if not line: return
             parts = line.split()
             if not parts: return
