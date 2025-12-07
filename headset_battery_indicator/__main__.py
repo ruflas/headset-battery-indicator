@@ -64,6 +64,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
     def __init__(self, debug_mode=False, parent=None):
         super().__init__(parent)
         self.debug_mode = debug_mode
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        self.icons_dir = os.path.join(base_path, 'icons')
         # Reconfigure logger for console output if in debug mode
         if debug_mode:
             global logger
@@ -85,7 +87,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 "Dependency Error",
                 "HeadsetControl binary not found. Please install it."
             )
-            self.setIcon(QIcon.fromTheme("dialog-error"))
+            self.setIcon(self.get_icon("battery-missing-symbolic"))
             self.setToolTip("ERROR: HeadsetControl not found.")
         
         self.apply_saved_settings()
@@ -154,6 +156,13 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         logger.debug(f"Settings loaded: Notify={self.notify_enabled}, Threshold={self.notify_threshold}%, Lights={self.lights_on}")
 
 
+    def get_icon(self, icon_name):
+        local_path = os.path.join(self.icons_dir, f"{icon_name}.svg")
+        if not os.path.exists(local_path) and self.debug_mode:
+            logger.warning(f"Icon file not found: {local_path}")
+        fallback_icon = QIcon(local_path)
+        return QIcon.fromTheme(icon_name, fallback_icon)
+    
     def setup_menu(self):
             """Builds the context (right-click) menu."""
             
@@ -385,7 +394,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                     logger.info(f"Setting icon to '{icon_name}'. (Pause timer)")
                     self.timer.stop() 
                     print("Debug: Automatic updates paused. Type 'resume' to restart.")
-                    self.setIcon(QIcon.fromTheme(icon_name))
+                    self.setIcon(self.get_icon(icon_name))
                     QApplication.processEvents()
                 else:
                     logger.error("DEBUG Error: 'setIcon' requires an icon name.")
@@ -472,7 +481,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
     def send_notification(self, title, message):
         """Sends a desktop notification."""
-        icon = QIcon.fromTheme("battery-caution-symbolic")
+        icon = self.get_icon("battery-caution-symbolic")
         self.showMessage(title, message, icon, 10000)
 
     def get_battery_status(self):
@@ -531,7 +540,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             if data["error"] == "Binary Missing":
                  return 
             
-            self.setIcon(QIcon.fromTheme("audio-headset-symbolic"))
+            self.setIcon(self.get_icon("audio-headset-symbolic"))
             self.setToolTip(f"Headset: {data['error']}")
             self.info_name_action.setText("Headset")
             self.info_status_action.setText(f"Status: {data['error']}")
@@ -549,12 +558,12 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             self.notified_low_battery = False
         else:
             tooltip_status = f"Discharging ({level_str})"
-            if level > 90: icon_name = "battery-100-symbolic"
-            elif level > 70: icon_name = "battery-080-symbolic"
-            elif level > 50: icon_name = "battery-060-symbolic"
-            elif level > 30: icon_name = "battery-040-symbolic"
-            elif level > 10: icon_name = "battery-020-symbolic"
-            else: icon_name = "battery-000-symbolic"
+            if level > 90: icon_name = "battery-level-100-symbolic"
+            elif level > 70: icon_name = "battery-level-80-symbolic"
+            elif level > 50: icon_name = "battery-level-60-symbolic"
+            elif level > 30: icon_name = "battery-level-40-symbolic"
+            elif level > 10: icon_name = "battery-level-20-symbolic"
+            else: icon_name = "battery-level-00-symbolic"
 
             if self.notify_enabled and level <= self.notify_threshold:
                 if not self.notified_low_battery:
@@ -569,7 +578,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             elif level > self.notify_threshold:
                 self.notified_low_battery = False
 
-        self.setIcon(QIcon.fromTheme(icon_name))
+        self.setIcon(self.get_icon(icon_name))
         self.setToolTip(f"{device_name}\nStatus: {tooltip_status}")
         
         self.info_name_action.setText(device_name)

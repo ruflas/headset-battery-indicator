@@ -163,3 +163,6 @@ To run the indicator automatically on login:
    - **Source install:** `headset-battery-indicator`
 
 Your settings and preferences will be restored automatically each time.
+
+## Credits
+- Default icons provided by the [GNOME Adwaita Icon Theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme).

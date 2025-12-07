@@ -1,0 +1,3 @@
+recursive-include icons *.svg
+include README.md
+include LICENSE
