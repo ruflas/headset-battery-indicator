@@ -66,7 +66,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
     def __init__(self, debug_mode=False, parent=None):
         super().__init__(parent)
         self.debug_mode = debug_mode
-
+        self.use_test_device = False
         # 1. Define base paths
         current_script_dir = os.path.dirname(os.path.abspath(__file__))
         
@@ -141,6 +141,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             print("  notification         (sends desktop + headset sound)")
             print("  update               (forces a status update)")
             print("  resume               (resumes automatic updates)")
+            print("  mock[on/off]        (e.g., mockon) (enables/disables test device simulation)")
             print("  exit                 (quits the application)")
             print("------------------------------------")
             
@@ -374,7 +375,12 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             return
 
         # Uses the path found in _find_headsetcontrol
-        command = [self.headsetcontrol_path] + args_list
+        command = [self.headsetcontrol_path]
+
+        if self.use_test_device:
+            command.extend(['--test-device', '[0xf00b:0xa00c]'])
+            
+        command = command + args_list
         
         try:
             subprocess.run(
@@ -452,6 +458,18 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 logger.info("DEBUG: Forcing single status update.")
                 self.update_status()
                 QApplication.processEvents()
+            
+            elif command == "mockon":
+                self.use_test_device = True
+                logger.info("DEBUG: Test Device Mode ACTIVATED via headsetcontrol internal mock.")
+                print("Test Device Mode: ON (Using --test-device [0xf00b:0xa00c])")
+                self.update_status() # Forzar actualización inmediata
+
+            elif command == "mockoff":
+                self.use_test_device = False
+                logger.info("DEBUG: Test Device Mode DEACTIVATED.")
+                print("Test Device Mode: OFF (Using real hardware)")
+                self.update_status()
 
             elif command == "resume":
                 logger.info("DEBUG: Resuming automatic updates.")
@@ -536,9 +554,15 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             return {"status": "error", "error": "Binary Missing"}
             
         try:
+            cmd_args = [self.headsetcontrol_path]
+            
+            if self.use_test_device:
+                cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
+            
+            cmd_args.append('-b')
             # Use the pre-determined path
             result = subprocess.run(
-                [self.headsetcontrol_path, '-b'], 
+                cmd_args, 
                 capture_output=True,
                 text=True,
                 check=True
