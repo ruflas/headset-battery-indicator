@@ -67,13 +67,35 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         super().__init__(parent)
         self.debug_mode = debug_mode
 
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        # 1. Define base paths
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
         
+        # 2. SMART icon detection logic
+        # A) Attempt 1: Look for 'icons' next to the script (Dev environment / Direct execution)
+        path_attempt_1 = os.path.join(current_script_dir, 'icons')
+        
+        # B) Attempt 2: Look for 'icons' one level up (AppImage / Briefcase structure)
+        # This translates /usr/app/package/icons -> /usr/app/icons
+        path_attempt_2 = os.path.join(os.path.dirname(current_script_dir), 'icons')
+
+        # C) Fallback for legacy PyInstaller (optional but safe)
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-            base_path = sys._MEIPASS
-            
-        self.icons_dir = os.path.join(base_path, 'icons')
+             self.icons_dir = os.path.join(sys._MEIPASS, 'icons')
         
+        # Final decision:
+        elif os.path.exists(path_attempt_1):
+            self.icons_dir = path_attempt_1
+            if debug_mode: print(f"DEBUG: Icons found locally at {self.icons_dir}")
+            
+        elif os.path.exists(path_attempt_2):
+            self.icons_dir = path_attempt_2
+            if debug_mode: print(f"DEBUG: Icons found in parent dir at {self.icons_dir}")
+            
+        else:
+            # If everything fails, default to local so the error is clear
+            self.icons_dir = path_attempt_1
+            if debug_mode: print(f"DEBUG: Icons NOT found. Defaulting to {self.icons_dir}")
+            
         if debug_mode:
             global logger
             logger = setup_logging(debug_to_console=True) 
