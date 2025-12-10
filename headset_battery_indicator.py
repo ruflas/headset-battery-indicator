@@ -67,10 +67,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         super().__init__(parent)
         self.debug_mode = debug_mode
 
-        if getattr(sys, 'frozen', False):
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
             base_path = sys._MEIPASS
-        else:
-            base_path = os.path.dirname(os.path.abspath(__file__))
             
         self.icons_dir = os.path.join(base_path, 'icons')
         
