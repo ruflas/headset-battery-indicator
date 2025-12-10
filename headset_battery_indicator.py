@@ -10,7 +10,7 @@ import logging
 import shutil
 import threading
 from logging.handlers import RotatingFileHandler 
-from PySide6.QtCore import QTimer, QSettings, QSocketNotifier , Signal, Slot
+from PySide6.QtCore import QTimer, QSettings, QSocketNotifier , Signal, Slot, QThread
 from PySide6.QtGui import QIcon, QAction, QActionGroup
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 
@@ -60,6 +60,80 @@ def setup_logging(debug_to_console=False):
 
 logger = setup_logging()
 # --- END LOGGING SETUP ---
+
+class BatteryWorker(QThread):
+    """
+    Worker thread to execute the headsetcontrol command in the background.
+    This prevents the main GUI from freezing while waiting for USB I/O.
+    """
+    # Signal to send the result (dictionary) back to the main GUI thread
+    status_received = Signal(dict)
+
+    def __init__(self, binary_path, use_test_device):
+        super().__init__()
+        self.binary_path = binary_path
+        self.use_test_device = use_test_device
+
+    def run(self):
+        """This code runs in a separate thread."""
+        if not self.binary_path:
+            self.status_received.emit({"status": "error", "error": "Binary Missing"})
+            return
+
+        try:
+            # --- Command Construction ---
+            cmd_args = [self.binary_path]
+            
+            # Inject test device argument if in debug mode
+            if self.use_test_device:
+                cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
+            
+            cmd_args.append('-b') # Battery status flag
+
+            # Execute the command (Blocking operation)
+            result = subprocess.run(
+                cmd_args, 
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            output = result.stdout
+            
+            # --- Output Parsing ---
+            # Regex to find level and charging status
+            level_match = re.search(r"Level:\s*(\d+%)", output)
+            status_match = re.search(r"Status:\s*(BATTERY_CHARGING)", output)
+            
+            # Robust name extraction (look for the line with [0x...])
+            name_match = None
+            for line in output.splitlines():
+                if re.search(r"\[0x.*\]", line):
+                    match = re.search(r"^\s*(.*?)\s*\[0x.*\]\s*$", line)
+                    if match: name_match = match
+                    break
+            
+            if not level_match:
+                self.status_received.emit({"status": "error", "error": "Parse Error"})
+                return
+
+            level_str = level_match.group(1)
+            numeric_level = int(level_str.replace('%', ''))
+            is_charging = (status_match is not None)
+            device_name = name_match.group(1) if name_match else "Unknown Headset"
+            
+            # Success! Emit data back to main thread
+            self.status_received.emit({
+                "status": "ok",
+                "level": numeric_level,
+                "level_str": level_str,
+                "is_charging": is_charging,
+                "name": device_name
+            })
+
+        except subprocess.CalledProcessError:
+            self.status_received.emit({"status": "error", "error": "Disconnected"})
+        except Exception as e:
+            self.status_received.emit({"status": "error", "error": "Execution Failed"})
 
 class HeadsetBatteryTray(QSystemTrayIcon):
     command_received = Signal(str)
@@ -546,63 +620,19 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         icon = self.get_icon("battery-caution-symbolic")
         self.showMessage(title, message, icon, 10000)
 
-    def get_battery_status(self):
-        """Runs headsetcontrol and parses its output."""
-        
-        # If the binary was not found at startup, skip execution
-        if not self.headsetcontrol_path:
-            return {"status": "error", "error": "Binary Missing"}
-            
-        try:
-            cmd_args = [self.headsetcontrol_path]
-            
-            if self.use_test_device:
-                cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
-            
-            cmd_args.append('-b')
-            # Use the pre-determined path
-            result = subprocess.run(
-                cmd_args, 
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            output = result.stdout
-            
-            level_match = re.search(r"Level:\s*(\d+%)", output)
-            status_match = re.search(r"Status:\s*(BATTERY_CHARGING)", output)
-            name_match = re.search(r"^\s*(.*?)\s*\[0x.*\]\s*$", output.splitlines()[1], re.MULTILINE)
-            
-            if not level_match:
-                logger.warning("Battery status command successful but failed to parse battery level.")
-                return {"status": "error", "error": "Parse Error"}
-
-            level_str = level_match.group(1)
-            numeric_level = int(level_str.replace('%', ''))
-            is_charging = (status_match is not None)
-            device_name = name_match.group(1) if name_match else "Unknown Headset"
-            
-            logger.debug(f"Status check: {level_str}, Charging: {is_charging}")
-
-            return {
-                "status": "ok",
-                "level": numeric_level,
-                "level_str": level_str,
-                "is_charging": is_charging,
-                "name": device_name
-            }
-
-        except subprocess.CalledProcessError:
-            logger.error("HeadsetControl returned non-zero exit code (possibly device not ready or disconnected).")
-            return {"status": "error", "error": "Disconnected"}
-        except FileNotFoundError:
-             # This error should have been caught by __init__
-             return {"status": "error", "error": "Execution Failed"}
-
     def update_status(self):
-        """Updates the icon, tooltip and checks for notification logic."""
+        """Starts the background update process."""
+        # 1. Instantiate the worker with current config
+        self.worker = BatteryWorker(self.headsetcontrol_path, self.use_test_device)
         
-        data = self.get_battery_status()
+        # 2. Connect the worker's signal to the GUI update slot
+        self.worker.status_received.connect(self.on_battery_result)
+        
+        # 3. Start the thread (Does not block the GUI)
+        self.worker.start()
+
+    def on_battery_result(self, data):
+        """Slot that receives data from the worker thread and updates the UI."""
         
         if data["status"] == "error":
             if data["error"] == "Binary Missing":
@@ -615,6 +645,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             self.notified_low_battery = False
             return
 
+        # --- Success Path ---
         level = data["level"]
         level_str = data["level_str"]
         device_name = data["name"]
@@ -626,6 +657,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             self.notified_low_battery = False
         else:
             tooltip_status = f"Discharging ({level_str})"
+            
+            # Icon selection logic based on level
             if level > 90: icon_name = "battery-level-100-symbolic"
             elif level > 70: icon_name = "battery-level-80-symbolic"
             elif level > 50: icon_name = "battery-level-60-symbolic"
@@ -633,6 +666,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             elif level > 10: icon_name = "battery-level-20-symbolic"
             else: icon_name = "battery-level-00-symbolic"
 
+            # Notification logic
             if self.notify_enabled and level <= self.notify_threshold:
                 if not self.notified_low_battery:
                     logger.warning(f"Low battery threshold reached: {level_str}. Notifying user.")
@@ -646,6 +680,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             elif level > self.notify_threshold:
                 self.notified_low_battery = False
 
+        # Update UI elements
         self.setIcon(self.get_icon(icon_name))
         self.setToolTip(f"{device_name}\nStatus: {tooltip_status}")
         
