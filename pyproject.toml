@@ -41,7 +41,7 @@ formal_name = "Headset Battery Indicator"
 description = "A system tray icon to monitor headset battery levels"
 
 # El script principal
-sources = ["headset_battery_indicator", "icons"]]
+sources = ["headset_battery_indicator", "icons"]
 
 # Dependencias de Python
 requires = [
