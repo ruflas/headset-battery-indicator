@@ -10,9 +10,11 @@ import logging
 import shutil
 import threading
 from logging.handlers import RotatingFileHandler 
-from PySide6.QtCore import QTimer, QSettings, QSocketNotifier , Signal, Slot, QThread
-from PySide6.QtGui import QIcon, QAction, QActionGroup
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PySide6.QtCore import QTimer, QSettings, Signal, Slot, QThread, Qt, QRectF
+from PySide6.QtGui import QIcon, QAction, QActionGroup, QPainter, QPixmap, QColor, QFont, QPen, QBrush
+from PySide6.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QDialog, 
+                               QVBoxLayout, QPushButton, QColorDialog, QComboBox, 
+                               QFormLayout, QDialogButtonBox, QSpinBox, QCheckBox)
 
 # --- Config ---
 UPDATE_INTERVAL_MS = 60000  # 60 seconds
@@ -61,12 +63,104 @@ def setup_logging(debug_to_console=False):
 logger = setup_logging()
 # --- END LOGGING SETUP ---
 
+class PreferencesDialog(QDialog):
+    settings_saved = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Preferences")
+        self.resize(300, 250)
+        self.settings = QSettings()
+        
+        # Temporary values
+        self.temp_fill = "#00FF00"
+        self.temp_border = "#FFFFFF"
+        
+        self.setup_ui()
+        self.load_current_settings()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.btn_fill = QPushButton()
+        self.btn_fill.clicked.connect(lambda: self.pick_color("fill"))
+        form.addRow("Fill Color:", self.btn_fill)
+
+        self.btn_border = QPushButton()
+        self.btn_border.clicked.connect(lambda: self.pick_color("border"))
+        form.addRow("Border Color:", self.btn_border)
+
+        self.combo_orient = QComboBox()
+        self.combo_orient.addItems(["Horizontal", "Vertical"])
+        form.addRow("Orientation:", self.combo_orient)
+
+        self.spin_scale = QSpinBox()
+        self.spin_scale.setRange(50, 150)
+        self.spin_scale.setSingleStep(5)
+        self.spin_scale.setSuffix("%")
+        form.addRow("Icon Zoom/Scale:", self.spin_scale)
+
+        # --- NEW: Checkbox to show text ---
+        self.chk_show_text = QCheckBox("Show percentage/bolt inside icon")
+        form.addRow("Overlay Text:", self.chk_show_text)
+        # ------------------------------------------
+
+        layout.addLayout(form)
+        
+        btns = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        btns.accepted.connect(self.save_settings)
+        btns.rejected.connect(self.reject)
+        layout.addWidget(btns)
+
+    def load_current_settings(self):
+        self.temp_fill = self.settings.value("iconFillColor", "#00FF00", type=str)
+        self.temp_border = self.settings.value("iconBorderColor", "#FFFFFF", type=str)
+        orient = self.settings.value("iconOrientation", "Horizontal", type=str)
+        scale = self.settings.value("iconScale", 75, type=int) 
+        
+        # Load text option (Default True)
+        show_text = self.settings.value("iconShowText", True, type=bool)
+
+        self.update_btn_style(self.btn_fill, self.temp_fill)
+        self.update_btn_style(self.btn_border, self.temp_border)
+        self.combo_orient.setCurrentText(orient)
+        self.spin_scale.setValue(scale)
+        self.chk_show_text.setChecked(show_text)
+
+    def pick_color(self, target):
+        initial = QColor(self.temp_fill if target == "fill" else self.temp_border)
+        color = QColorDialog.getColor(initial, self, "Select Color")
+        if color.isValid():
+            hex_c = color.name()
+            if target == "fill": 
+                self.temp_fill = hex_c
+                self.update_btn_style(self.btn_fill, hex_c)
+            else: 
+                self.temp_border = hex_c
+                self.update_btn_style(self.btn_border, hex_c)
+
+    def update_btn_style(self, btn, color_hex):
+        fg = "black" if QColor(color_hex).lightness() > 128 else "white"
+        btn.setText(color_hex)
+        btn.setStyleSheet(f"background-color: {color_hex}; color: {fg}; border: 1px solid #555;")
+
+    def save_settings(self):
+        self.settings.setValue("iconFillColor", self.temp_fill)
+        self.settings.setValue("iconBorderColor", self.temp_border)
+        self.settings.setValue("iconOrientation", self.combo_orient.currentText())
+        self.settings.setValue("iconScale", self.spin_scale.value())
+        
+        # Save the checkbox state
+        self.settings.setValue("iconShowText", self.chk_show_text.isChecked())
+        
+        self.settings_saved.emit()
+        self.accept()
+
 class BatteryWorker(QThread):
     """
     Worker thread to execute the headsetcontrol command in the background.
-    This prevents the main GUI from freezing while waiting for USB I/O.
     """
-    # Signal to send the result (dictionary) back to the main GUI thread
     status_received = Signal(dict)
 
     def __init__(self, binary_path, use_test_device):
@@ -84,13 +178,19 @@ class BatteryWorker(QThread):
             # --- Command Construction ---
             cmd_args = [self.binary_path]
             
-            # Inject test device argument if in debug mode
             if self.use_test_device:
+                # NOTE: Some systems prefer this separated, others combined.
+                # We pass the flag and ID as separate list elements.
                 cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
             
-            cmd_args.append('-b') # Battery status flag
+            cmd_args.append('-b')
 
-            # Execute the command (Blocking operation)
+            # --- DEBUG LOG (To see what's happening) ---
+            # We only log if test mode is used to avoid cluttering the normal log
+            if self.use_test_device:
+                logger.debug(f"WORKER: Running command: {cmd_args}")
+
+            # Execute
             result = subprocess.run(
                 cmd_args, 
                 capture_output=True,
@@ -99,12 +199,13 @@ class BatteryWorker(QThread):
             )
             output = result.stdout
             
+            if self.use_test_device:
+                logger.debug(f"WORKER: Output received:\n{output.strip()}")
+
             # --- Output Parsing ---
-            # Regex to find level and charging status
             level_match = re.search(r"Level:\s*(\d+%)", output)
             status_match = re.search(r"Status:\s*(BATTERY_CHARGING)", output)
             
-            # Robust name extraction (look for the line with [0x...])
             name_match = None
             for line in output.splitlines():
                 if re.search(r"\[0x.*\]", line):
@@ -113,6 +214,8 @@ class BatteryWorker(QThread):
                     break
             
             if not level_match:
+                # If parsing fails in mock mode, we'll see it in the log
+                logger.error(f"WORKER: Failed to parse level from: {output}")
                 self.status_received.emit({"status": "error", "error": "Parse Error"})
                 return
 
@@ -121,7 +224,6 @@ class BatteryWorker(QThread):
             is_charging = (status_match is not None)
             device_name = name_match.group(1) if name_match else "Unknown Headset"
             
-            # Success! Emit data back to main thread
             self.status_received.emit({
                 "status": "ok",
                 "level": numeric_level,
@@ -130,9 +232,11 @@ class BatteryWorker(QThread):
                 "name": device_name
             })
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            logger.error(f"WORKER: Command failed with exit code {e.returncode}. Stderr: {e.stderr}")
             self.status_received.emit({"status": "error", "error": "Disconnected"})
         except Exception as e:
+            logger.error(f"WORKER: Unexpected exception: {e}")
             self.status_received.emit({"status": "error", "error": "Execution Failed"})
 
 class HeadsetBatteryTray(QSystemTrayIcon):
@@ -141,34 +245,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         super().__init__(parent)
         self.debug_mode = debug_mode
         self.use_test_device = False
-        # 1. Define base paths
-        current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # 2. SMART icon detection logic
-        # A) Attempt 1: Look for 'icons' next to the script (Dev environment / Direct execution)
-        path_attempt_1 = os.path.join(current_script_dir, 'icons')
-        
-        # B) Attempt 2: Look for 'icons' one level up (AppImage / Briefcase structure)
-        # This translates /usr/app/package/icons -> /usr/app/icons
-        path_attempt_2 = os.path.join(os.path.dirname(current_script_dir), 'icons')
-
-        # C) Fallback for legacy PyInstaller (optional but safe)
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-             self.icons_dir = os.path.join(sys._MEIPASS, 'icons')
-        
-        # Final decision:
-        elif os.path.exists(path_attempt_1):
-            self.icons_dir = path_attempt_1
-            if debug_mode: print(f"DEBUG: Icons found locally at {self.icons_dir}")
-            
-        elif os.path.exists(path_attempt_2):
-            self.icons_dir = path_attempt_2
-            if debug_mode: print(f"DEBUG: Icons found in parent dir at {self.icons_dir}")
-            
-        else:
-            # If everything fails, default to local so the error is clear
-            self.icons_dir = path_attempt_1
-            if debug_mode: print(f"DEBUG: Icons NOT found. Defaulting to {self.icons_dir}")
+        self.last_battery_data = None 
             
         if debug_mode:
             global logger
@@ -211,7 +288,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             print(f"Log file location: {LOG_FILE}")
             print("Type commands and press Enter:")
             print("  log-test             (writes sample logs at different levels)")
-            print("  setIcon [icon-name]  (e.g., 'battery-100-symbolic')")
+            print("  setIcon [icon-name]  (e.g., 100 , 50 , error")
             print("  notification         (sends desktop + headset sound)")
             print("  update               (forces a status update)")
             print("  resume               (resumes automatic updates)")
@@ -264,15 +341,127 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.chatmix_level = self.settings.value("chatmixLevel", 64, type=int)
         self.inactive_time = self.settings.value("inactiveTime", 0, type=int)
 
+        self.vis_fill = self.settings.value("iconFillColor", "#00FF00", type=str)
+        self.vis_border = self.settings.value("iconBorderColor", "#FFFFFF", type=str)
+        self.vis_orient = self.settings.value("iconOrientation", "Horizontal", type=str)
+        self.vis_scale = self.settings.value("iconScale", 75, type=int)
+        self.vis_show_text = self.settings.value("iconShowText", True, type=bool)
         logger.debug(f"Settings loaded: Notify={self.notify_enabled}, Threshold={self.notify_threshold}%, Lights={self.lights_on}")
 
 
-    def get_icon(self, icon_name):
-        local_path = os.path.join(self.icons_dir, f"{icon_name}.svg")
-        if not os.path.exists(local_path) and self.debug_mode:
-            logger.warning(f"Icon file not found: {local_path}")
-        fallback_icon = QIcon(local_path)
-        return QIcon.fromTheme(icon_name, fallback_icon)
+    def paint_battery_icon(self, percentage, is_charging, error=False):
+        # High resolution canvas
+        s = 128 
+        pixmap = QPixmap(s, s)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Zoom factor
+        scale_factor = self.vis_scale / 100.0
+
+        if error:
+            painter.setPen(QPen(Qt.red, int(s * 0.15)))
+            m = int(s * 0.25)
+            painter.drawLine(m, m, s-m, s-m)
+            painter.drawLine(s-m, m, m, s-m)
+            painter.end()
+            return QIcon(pixmap)
+
+        c_fill = QColor(self.vis_fill)
+        if is_charging: c_fill = c_fill.lighter(130)
+        c_border = QColor(self.vis_border)
+
+        # Proportional but robust border
+        pen_width = max(6, int(s * 0.06 * scale_factor))
+        pen = QPen(c_border); pen.setWidth(pen_width)
+        painter.setPen(pen)
+        
+        # UPDATED PROPORTIONS (Thicker)
+        
+        if self.vis_orient == "Horizontal":
+            # Total width used (Zoom)
+            w_total = s * scale_factor
+            h_total = (s * 0.80) * scale_factor 
+            
+            # Centered
+            x_start = (s - w_total) / 2
+            y_start = (s - h_total) / 2
+            
+            # Dimensions of parts
+            w_body = w_total * 0.90
+            w_nub = w_total * 0.10
+            h_nub = h_total * 0.50 # Nub also taller
+            
+            body = QRectF(x_start, y_start, w_body, h_total)
+            nub = QRectF(x_start + w_body, y_start + (h_total - h_nub)/2, w_nub, h_nub)
+            
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(body, s//15, s//15) # Softer rounding
+            painter.setBrush(c_border)
+            painter.drawRoundedRect(nub, s//30, s//30)
+            
+            if percentage > 0:
+                pad = pen_width * 1.5 # A bit of space between border and fill
+                fill_w = (w_body - 2*pad) * (percentage / 100.0)
+                if fill_w > 0:
+                    fill_rect = QRectF(body.x()+pad, body.y()+pad, fill_w, body.height()-2*pad)
+                    painter.setBrush(c_fill); painter.setPen(Qt.NoPen)
+                    painter.drawRoundedRect(fill_rect, s//40, s//40)
+
+        else: # Vertical
+            w_total = (s * 0.80) * scale_factor
+            h_total = s * scale_factor
+            
+            x_start = (s - w_total) / 2
+            y_start = (s - h_total) / 2
+            
+            h_body = h_total * 0.90
+            h_nub = h_total * 0.10
+            w_nub = w_total * 0.50
+            
+            # Nub at top
+            nub = QRectF(x_start + (w_total - w_nub)/2, y_start, w_nub, h_nub)
+            # Body at bottom
+            body = QRectF(x_start, y_start + h_nub, w_total, h_body)
+            
+            painter.setPen(pen); painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(body, s//15, s//15)
+            painter.setBrush(c_border)
+            painter.drawRoundedRect(nub, s//30, s//30)
+            
+            if percentage > 0:
+                pad = pen_width * 1.5
+                fill_h = (h_body - 2*pad) * (percentage / 100.0)
+                if fill_h > 0:
+                    # Fill from bottom
+                    y_fill = (body.y() + body.height() - pad) - fill_h
+                    fill_rect = QRectF(body.x()+pad, y_fill, body.width()-2*pad, fill_h)
+                    painter.setBrush(c_fill); painter.setPen(Qt.NoPen)
+                    painter.drawRoundedRect(fill_rect, s//40, s//40)
+
+        if self.vis_show_text:
+            painter.setPen(c_border)
+            # Larger font (0.50 of total size)
+            font_size = int(s * 0.50 * scale_factor)
+            font = QFont("Segoe UI", font_size, QFont.Bold)
+            painter.setFont(font)
+            
+            txt = "⚡" if is_charging else str(percentage)
+            
+            # 1. Solid black shadow behind for maximum contrast
+            path = QPainter.font(painter)
+            painter.setPen(QColor(0, 0, 0, 255))
+            offset = max(2, int(s*0.03))
+            painter.drawText(QRectF(offset, offset, s, s), Qt.AlignCenter, txt)
+            
+            # 2. Main text (Border color)
+            painter.setPen(c_border)
+            painter.drawText(QRectF(0, 0, s, s), Qt.AlignCenter, txt)
+        # -------------------------------------------------------
+
+        painter.end()
+        return QIcon(pixmap)
     
     def setup_menu(self):
             """Builds the context (right-click) menu."""
@@ -286,6 +475,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             self.info_status_action.setEnabled(False)
             self.menu.addAction(self.info_status_action)
             self.menu.addSeparator()
+
+            self.pref_action = QAction("Preferences...", self)
+            self.pref_action.triggered.connect(self.open_preferences)
+            self.menu.addAction(self.pref_action)
 
             # --- Notification Section ---
             self.notify_action = QAction("Notify on low battery", self)
@@ -409,7 +602,20 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             quit_action.triggered.connect(QApplication.instance().quit)
             self.menu.addAction(quit_action)
         # --- Log Folder Utilities (For Debugging/Support) ---
-        
+
+    def open_preferences(self):
+        dlg = PreferencesDialog(None)
+        dlg.settings_saved.connect(self.on_prefs_changed)
+        dlg.exec()
+
+    def on_prefs_changed(self):
+        self.load_settings()
+        # Si tenemos datos en memoria, repintamos sin esperar al timer
+        if self.last_battery_data:
+            self.on_battery_result(self.last_battery_data)
+        else:
+            self.update_status() # Forzar lectura si no hay datos
+
     def open_log_folder(self):
         """Opens the log folder in the file explorer (Cross-platform)."""
         logger.info(f"Opening log folder: {LOG_DIR}")
@@ -417,7 +623,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             # Detect if the OS is Windows
             if os.name == 'nt':
                 os.startfile(LOG_DIR)
-            # Detect if the OS is macosX (darwin) o Linux
+            # Detect if the OS is macOS (darwin) or Linux
             else:
                 opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
                 subprocess.run([opener, LOG_DIR], check=True)
@@ -514,14 +720,32 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
             elif command == "seticon":
                 if len(parts) > 1:
-                    icon_name = parts[1]
-                    logger.info(f"Setting icon to '{icon_name}'. (Pause timer)")
+                    arg = parts[1].lower()
+                    
+                    # Stop the timer so the real update doesn't overwrite our test
                     self.timer.stop() 
                     print("Debug: Automatic updates paused. Type 'resume' to restart.")
-                    self.setIcon(self.get_icon(icon_name))
-                    QApplication.processEvents()
+                    
+                    if arg == "error":
+                        # Visual test of Error
+                        logger.info("Debug: Testing ERROR icon.")
+                        self.setIcon(self.paint_battery_icon(0, False, error=True))
+                        
+                    elif arg.isdigit():
+                        # Visual test of Percentage (0-100)
+                        level = int(arg)
+                        # Detect if we want to test charging: setIcon 50 charging
+                        is_charging = len(parts) > 2 and parts[2].lower() == "charging"
+                        
+                        logger.info(f"Debug: Testing icon at {level}% (Charging: {is_charging})")
+                        self.setIcon(self.paint_battery_icon(level, is_charging))
+                        
+                    else:
+                        print("Usage: setIcon <number> [charging] | error")
+                        print("Examples: setIcon 50, setIcon 80 charging, setIcon error")
                 else:
-                    logger.error("DEBUG Error: 'setIcon' requires an icon name.")
+                    logger.error("DEBUG Error: Missing argument.")
+                    print("Usage: setIcon <number> [charging] | error")
             
             elif command == "notification":
                 logger.info("DEBUG: Sending test notification.")
@@ -533,16 +757,19 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 self.update_status()
                 QApplication.processEvents()
             
-            elif command == "mockon":
-                self.use_test_device = True
-                logger.info("DEBUG: Test Device Mode ACTIVATED via headsetcontrol internal mock.")
-                print("Test Device Mode: ON (Using --test-device [0xf00b:0xa00c])")
-                self.update_status() # Forzar actualización inmediata
-
-            elif command == "mockoff":
-                self.use_test_device = False
-                logger.info("DEBUG: Test Device Mode DEACTIVATED.")
-                print("Test Device Mode: OFF (Using real hardware)")
+            elif command == "mock" or command == "mockon" or command == "mockoff":
+                # Detect intention
+                enable = False
+                if command == "mockon": enable = True
+                elif command == "mock" and len(parts) > 1 and parts[1].lower() == "on": enable = True
+                
+                self.use_test_device = enable
+                state_str = "ON" if enable else "OFF"
+                
+                logger.info(f"DEBUG: Mock Mode set to {state_str}")
+                print(f"Test Device Mode: {state_str}")
+                
+                # Force immediate update to see the change
                 self.update_status()
 
             elif command == "resume":
@@ -633,12 +860,15 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
     def on_battery_result(self, data):
         """Slot that receives data from the worker thread and updates the UI."""
-        
+        self.last_battery_data = data
+
         if data["status"] == "error":
             if data["error"] == "Binary Missing":
+                 self.setIcon(self.paint_battery_icon(0, False, error=True))
                  return 
             
-            self.setIcon(self.get_icon("audio-headset-symbolic"))
+            # Error icon generic
+            self.setIcon(self.paint_battery_icon(0, False, error=True))
             self.setToolTip(f"Headset: {data['error']}")
             self.info_name_action.setText("Headset")
             self.info_status_action.setText(f"Status: {data['error']}")
@@ -649,41 +879,28 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         level = data["level"]
         level_str = data["level_str"]
         device_name = data["name"]
-        icon_name = "battery-missing-symbolic"
         
-        if data["is_charging"]:
-            icon_name = "battery-charging-symbolic"
-            tooltip_status = f"Charging ({level_str})"
-            self.notified_low_battery = False
-        else:
-            tooltip_status = f"Discharging ({level_str})"
-            
-            # Icon selection logic based on level
-            if level > 90: icon_name = "battery-level-100-symbolic"
-            elif level > 70: icon_name = "battery-level-80-symbolic"
-            elif level > 50: icon_name = "battery-level-60-symbolic"
-            elif level > 30: icon_name = "battery-level-40-symbolic"
-            elif level > 10: icon_name = "battery-level-20-symbolic"
-            else: icon_name = "battery-level-00-symbolic"
+        self.setIcon(self.paint_battery_icon(level, data["is_charging"]))
+        # ----
 
-            # Notification logic
-            if self.notify_enabled and level <= self.notify_threshold:
-                if not self.notified_low_battery:
-                    logger.warning(f"Low battery threshold reached: {level_str}. Notifying user.")
-                    self.send_notification(
-                        "Low Headset Battery",
-                        f"{device_name} is at {level_str}."
-                    )
-                    self.run_headset_command(['-n', '1'])
-                    self.notified_low_battery = True
-            
-            elif level > self.notify_threshold:
-                self.notified_low_battery = False
+        tooltip_status = f"{'Charging' if data['is_charging'] else 'Discharging'} ({level_str})"
+
+        # Notification logic
+        if self.notify_enabled and level <= self.notify_threshold and not data["is_charging"]:
+            if not self.notified_low_battery:
+                logger.warning(f"Low battery threshold reached: {level_str}. Notifying user.")
+                self.send_notification(
+                    "Low Headset Battery",
+                    f"{device_name} is at {level_str}."
+                )
+                self.run_headset_command(['-n', '1'])
+                self.notified_low_battery = True
+        
+        elif level > self.notify_threshold:
+            self.notified_low_battery = False
 
         # Update UI elements
-        self.setIcon(self.get_icon(icon_name))
         self.setToolTip(f"{device_name}\nStatus: {tooltip_status}")
-        
         self.info_name_action.setText(device_name)
         self.info_status_action.setText(f"Status: {tooltip_status}")
 
