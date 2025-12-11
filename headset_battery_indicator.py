@@ -843,7 +843,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
     def send_notification(self, title, message):
         """Sends a desktop notification."""
-        self.showMessage(title, message, 10000)
+        self.showMessage(title, message, QSystemTrayIcon.Information, 10000)
 
     def update_status(self):
         """Starts the background update process."""
