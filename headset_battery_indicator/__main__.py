@@ -265,7 +265,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 "Dependency Error",
                 "HeadsetControl binary not found. Please install it."
             )
-            self.setIcon(self.get_icon("battery-missing-symbolic"))
             self.setToolTip("ERROR: HeadsetControl not found.")
         
         self.apply_saved_settings()
@@ -844,8 +843,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
     def send_notification(self, title, message):
         """Sends a desktop notification."""
-        icon = self.get_icon("battery-caution-symbolic")
-        self.showMessage(title, message, icon, 10000)
+        self.showMessage(title, message, 10000)
 
     def update_status(self):
         """Starts the background update process."""
