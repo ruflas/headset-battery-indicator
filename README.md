@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/github/license/ruflas/headset-battery-indicator)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/ruflas/headset-battery-indicator)](https://github.com/ruflas/headset-battery-indicator/releases)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-
+[![Downloads](https://img.shields.io/github/downloads/ruflas/headset-battery-indicator/total)](https://github.com/ruflas/headset-battery-indicator/releases/latest)
 A lightweight, modern tray indicator that shows your **wireless headset’s battery level**, **charging status**, and lets you **control LEDs and sidetone** — all powered by [HeadsetControl](https://github.com/Sapd/HeadsetControl).
 
 It uses **PySide6 (Qt)** for the graphical interface and works seamlessly with **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desktop environments ans also macos and Windows.
