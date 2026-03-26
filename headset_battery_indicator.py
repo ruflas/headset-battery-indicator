@@ -208,13 +208,22 @@ class BatteryWorker(QThread):
             
             name_match = None
             for line in output.splitlines():
-                if re.search(r"\[0x.*\]", line):
+                if "[" in line and "0x" in line:
                     match = re.search(r"^\s*(.*?)\s*\[0x.*\]\s*$", line)
-                    if match: name_match = match
-                    break
+                    if match: 
+                        name_match = match
+                        break
+                elif "(" in line and ")" in line:
+                    match = re.search(r"\((.*?)\)", line)
+                    if match: 
+                        name_match = match
+                        break
             
             if not level_match:
-                # If parsing fails in mock mode, we'll see it in the log
+                if "BATTERY_UNAVAILABLE" in output:
+                    logger.info("WORKER: Headset detected but powered off (BATTERY_UNAVAILABLE).")
+                    self.status_received.emit({"status": "unavailable"})
+                    return
                 logger.error(f"WORKER: Failed to parse level from: {output}")
                 self.status_received.emit({"status": "error", "error": "Parse Error"})
                 return
@@ -860,6 +869,14 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         """Slot that receives data from the worker thread and updates the UI."""
         self.last_battery_data = data
 
+        if data["status"] == "unavailable":
+            self.setIcon(self.paint_battery_icon(0, False, error=False))
+            self.setToolTip("Headset: Powered Off")
+            self.info_name_action.setText("Headset")
+            self.info_status_action.setText("Status: Powered Off")
+            self.notified_low_battery = False
+            return
+        
         if data["status"] == "error":
             if data["error"] == "Binary Missing":
                  self.setIcon(self.paint_battery_icon(0, False, error=True))
