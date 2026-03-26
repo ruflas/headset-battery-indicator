@@ -15,7 +15,7 @@ from PySide6.QtGui import QIcon, QAction, QActionGroup, QPainter, QPixmap, QColo
 from PySide6.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QDialog, 
                                QVBoxLayout, QPushButton, QColorDialog, QComboBox, 
                                QFormLayout, QDialogButtonBox, QSpinBox, QCheckBox)
-
+from subprocess import CREATE_NO_WINDOW
 # --- Config ---
 UPDATE_INTERVAL_MS = 60000  # 60 seconds
 
@@ -27,6 +27,11 @@ LOG_DIR = os.path.join(
 LOG_FILE = os.path.join(LOG_DIR, 'app.log')
 MAX_LOG_BYTES = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 1
+
+if os.name == 'nt':
+    from subprocess import CREATE_NO_WINDOW
+else:
+    CREATE_NO_WINDOW = 0
 
 def setup_logging(debug_to_console=False):
     """Sets up the rotating file logger and optional console output."""
@@ -185,7 +190,8 @@ class BatteryWorker(QThread):
                 cmd_args, 
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                creationflags=CREATE_NO_WINDOW
             )
             output = result.stdout
 
@@ -603,6 +609,9 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 self.menu.addMenu(debug_tools_menu)
             # --- END LOG UTILITIES MENU ---
             # --- Exit Section ---
+            refresh_action = QAction("🔄 Update Status Now", self)
+            refresh_action.triggered.connect(self.update_status)
+            self.menu.addAction(refresh_action)
             self.menu.addSeparator()
             quit_action = QAction("Exit", self)
             quit_action.triggered.connect(QApplication.instance().quit)
@@ -673,7 +682,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 command, 
                 check=True, 
                 capture_output=True, 
-                text=True
+                text=True,
+                creationflags=CREATE_NO_WINDOW
             )
             logger.info(f"Ran command: {' '.join(command)}")
         except Exception as e:
