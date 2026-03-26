@@ -160,6 +160,7 @@ class PreferencesDialog(QDialog):
 class BatteryWorker(QThread):
     """
     Worker thread to execute the headsetcontrol command in the background.
+    Optimized to filter out 'Status' or 'Found' lines and capture real names.
     """
     status_received = Signal(dict)
 
@@ -175,22 +176,11 @@ class BatteryWorker(QThread):
             return
 
         try:
-            # --- Command Construction ---
             cmd_args = [self.binary_path]
-            
             if self.use_test_device:
-                # NOTE: Some systems prefer this separated, others combined.
-                # We pass the flag and ID as separate list elements.
                 cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
-            
             cmd_args.append('-b')
 
-            # --- DEBUG LOG (To see what's happening) ---
-            # We only log if test mode is used to avoid cluttering the normal log
-            if self.use_test_device:
-                logger.debug(f"WORKER: Running command: {cmd_args}")
-
-            # Execute
             result = subprocess.run(
                 cmd_args, 
                 capture_output=True,
@@ -198,40 +188,51 @@ class BatteryWorker(QThread):
                 check=True
             )
             output = result.stdout
-            
-            if self.use_test_device:
-                logger.debug(f"WORKER: Output received:\n{output.strip()}")
 
-            # --- Output Parsing ---
+            device_name = "Unknown Headset"
+            for line in output.splitlines():
+                clean_line = line.strip()
+
+                if not clean_line or clean_line.startswith(("Found 1", "Status:", "Level:", "HeadsetControl")):
+                    continue
+
+                if "[" in clean_line and "0x" in clean_line:
+                    match = re.search(r"^(.*?)\[0x", clean_line)
+                    if match:
+                        name_candidate = match.group(1).strip()
+                        if len(name_candidate) > 1: 
+                            device_name = name_candidate
+                            break
+                
+                elif "(" in clean_line and ")" in clean_line:
+                    match = re.search(r"\((.*?)\)", clean_line)
+                    if match:
+                        name_candidate = match.group(1).strip()
+                        if len(name_candidate) > 1:
+                            device_name = name_candidate
+                            break
+
             level_match = re.search(r"Level:\s*(\d+%)", output)
             status_match = re.search(r"Status:\s*(BATTERY_CHARGING)", output)
             
-            name_match = None
-            for line in output.splitlines():
-                if "[" in line and "0x" in line:
-                    match = re.search(r"^\s*(.*?)\s*\[0x.*\]\s*$", line)
-                    if match: 
-                        name_match = match
-                        break
-                elif "(" in line and ")" in line:
-                    match = re.search(r"\((.*?)\)", line)
-                    if match: 
-                        name_match = match
-                        break
-            
             if not level_match:
                 if "BATTERY_UNAVAILABLE" in output:
-                    logger.info("WORKER: Headset detected but powered off (BATTERY_UNAVAILABLE).")
-                    self.status_received.emit({"status": "unavailable"})
+                    self.status_received.emit({
+                        "status": "unavailable", 
+                        "name": device_name
+                    })
                     return
-                logger.error(f"WORKER: Failed to parse level from: {output}")
-                self.status_received.emit({"status": "error", "error": "Parse Error"})
+                
+                self.status_received.emit({
+                    "status": "error", 
+                    "error": "Disconnected", 
+                    "name": device_name
+                })
                 return
 
             level_str = level_match.group(1)
             numeric_level = int(level_str.replace('%', ''))
             is_charging = (status_match is not None)
-            device_name = name_match.group(1) if name_match else "Unknown Headset"
             
             self.status_received.emit({
                 "status": "ok",
@@ -241,9 +242,6 @@ class BatteryWorker(QThread):
                 "name": device_name
             })
 
-        except subprocess.CalledProcessError as e:
-            logger.error(f"WORKER: Command failed with exit code {e.returncode}. Stderr: {e.stderr}")
-            self.status_received.emit({"status": "error", "error": "Disconnected"})
         except Exception as e:
             logger.error(f"WORKER: Unexpected exception: {e}")
             self.status_received.emit({"status": "error", "error": "Execution Failed"})
