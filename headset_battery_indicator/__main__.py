@@ -15,7 +15,6 @@ from PySide6.QtGui import QIcon, QAction, QActionGroup, QPainter, QPixmap, QColo
 from PySide6.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QDialog, 
                                QVBoxLayout, QPushButton, QColorDialog, QComboBox, 
                                QFormLayout, QDialogButtonBox, QSpinBox, QCheckBox)
-from subprocess import CREATE_NO_WINDOW
 # --- Config ---
 UPDATE_INTERVAL_MS = 60000  # 60 seconds
 
@@ -28,10 +27,7 @@ LOG_FILE = os.path.join(LOG_DIR, 'app.log')
 MAX_LOG_BYTES = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 1
 
-if os.name == 'nt':
-    from subprocess import CREATE_NO_WINDOW
-else:
-    CREATE_NO_WINDOW = 0
+CREATE_NO_WINDOW = 0x08000000 if os.name == 'nt' else 0
 
 def setup_logging(debug_to_console=False):
     """Sets up the rotating file logger and optional console output."""
