@@ -8,7 +8,6 @@ import subprocess
 import os
 import logging
 
-from PySide6.QtCore import QThread, Signal
 from .parsing import parse_headsetcontrol_output
 
 logger = logging.getLogger(__name__)
@@ -48,20 +47,26 @@ def fetch_battery_status(binary_path: str, use_test_device: bool) -> dict:
         return {"status": "error", "error": "Execution Failed"}
 
 
-class BatteryWorker(QThread):
-    """
-    Thin Qt wrapper: runs fetch_battery_status() in a background thread and
-    emits the result via status_received so the UI thread is never blocked.
-    """
-    status_received = Signal(dict)
+try:
+    from PySide6.QtCore import QThread, Signal
 
-    def __init__(self, binary_path: str, use_test_device: bool):
-        super().__init__()
-        self.binary_path = binary_path
-        self.use_test_device = use_test_device
+    class BatteryWorker(QThread):
+        """
+        Thin Qt wrapper: runs fetch_battery_status() in a background thread and
+        emits the result via status_received so the UI thread is never blocked.
+        """
+        status_received = Signal(dict)
 
-    def run(self):
-        """Executed in a separate thread by Qt."""
-        self.status_received.emit(
-            fetch_battery_status(self.binary_path, self.use_test_device)
-        )
+        def __init__(self, binary_path: str, use_test_device: bool):
+            super().__init__()
+            self.binary_path = binary_path
+            self.use_test_device = use_test_device
+
+        def run(self):
+            """Executed in a separate thread by Qt."""
+            self.status_received.emit(
+                fetch_battery_status(self.binary_path, self.use_test_device)
+            )
+
+except ImportError:
+    pass  # BatteryWorker unavailable without PySide6 (e.g. in headless test environments)
