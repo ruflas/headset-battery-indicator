@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.briefcase/
+*.spec.bak
+headsetcontrol.exe
+.claude/
+.pytest_cache/

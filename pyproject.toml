@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "headset-battery-indicator"
-version = "2.0.0"
+version = "2.0.3"
 authors = [
     { name = "Ruflas", email = "ruflas@ruflas.dev" },
 ]
@@ -22,6 +22,12 @@ classifiers = [
 dependencies = [
     "PySide6",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [project.scripts]
 

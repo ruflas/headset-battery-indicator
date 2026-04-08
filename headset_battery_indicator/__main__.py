@@ -2,14 +2,14 @@
 
 import sys
 import subprocess
-import re
 import signal
 import textwrap
 import os
 import logging
 import shutil
 import threading
-from logging.handlers import RotatingFileHandler 
+from logging.handlers import RotatingFileHandler
+from .parsing import parse_headsetcontrol_output
 from PySide6.QtCore import QTimer, QSettings, Signal, Slot, QThread, Qt, QRectF
 from PySide6.QtGui import QIcon, QAction, QActionGroup, QPainter, QPixmap, QColor, QFont, QPen, QBrush
 from PySide6.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QDialog, 
@@ -180,69 +180,18 @@ class BatteryWorker(QThread):
             cmd_args = [self.binary_path]
             if self.use_test_device:
                 cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
-            cmd_args.append('-b')
+            cmd_args.extend(['-o', 'json', '-b'])
 
             result = subprocess.run(
-                cmd_args, 
+                cmd_args,
                 capture_output=True,
                 text=True,
-                check=True,
                 creationflags=CREATE_NO_WINDOW
             )
-            output = result.stdout
-
-            device_name = "Unknown Headset"
-            for line in output.splitlines():
-                clean_line = line.strip()
-
-                if not clean_line or clean_line.startswith(("Found 1", "Status:", "Level:", "HeadsetControl")):
-                    continue
-
-                if "[" in clean_line and "0x" in clean_line:
-                    match = re.search(r"^(.*?)\[0x", clean_line)
-                    if match:
-                        name_candidate = match.group(1).strip()
-                        if len(name_candidate) > 1: 
-                            device_name = name_candidate
-                            break
-                
-                elif "(" in clean_line and ")" in clean_line:
-                    match = re.search(r"\((.*?)\)", clean_line)
-                    if match:
-                        name_candidate = match.group(1).strip()
-                        if len(name_candidate) > 1:
-                            device_name = name_candidate
-                            break
-
-            level_match = re.search(r"Level:\s*(\d+%)", output)
-            status_match = re.search(r"Status:\s*(BATTERY_CHARGING)", output)
-            
-            if not level_match:
-                if "BATTERY_UNAVAILABLE" in output:
-                    self.status_received.emit({
-                        "status": "unavailable", 
-                        "name": device_name
-                    })
-                    return
-                
-                self.status_received.emit({
-                    "status": "error", 
-                    "error": "Disconnected", 
-                    "name": device_name
-                })
-                return
-
-            level_str = level_match.group(1)
-            numeric_level = int(level_str.replace('%', ''))
-            is_charging = (status_match is not None)
-            
-            self.status_received.emit({
-                "status": "ok",
-                "level": numeric_level,
-                "level_str": level_str,
-                "is_charging": is_charging,
-                "name": device_name
-            })
+            # Some headsetcontrol versions write to stderr on non-zero exit
+            output = result.stdout or result.stderr
+            logger.debug(f"WORKER: headsetcontrol exit={result.returncode}, output={output!r}")
+            self.status_received.emit(parse_headsetcontrol_output(output))
 
         except Exception as e:
             logger.error(f"WORKER: Unexpected exception: {e}")
