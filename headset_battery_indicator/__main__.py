@@ -362,18 +362,17 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             painter.setPen(c_border)
             # Larger font (0.50 of total size)
             font_size = int(s * 0.50 * scale_factor)
-            font = QFont("Segoe UI", font_size, QFont.Bold)
+            font = QFont("Sans Serif", font_size, QFont.Bold)
             painter.setFont(font)
             
             txt = "⚡" if is_charging else str(percentage)
-            
-            # 1. Solid black shadow behind for maximum contrast
-            path = QPainter.font(painter)
+
+            # 1. Dark shadow offset for contrast
             painter.setPen(QColor(0, 0, 0, 255))
-            offset = max(2, int(s*0.03))
+            offset = max(2, int(s * 0.03))
             painter.drawText(QRectF(offset, offset, s, s), Qt.AlignCenter, txt)
-            
-            # 2. Main text (Border color)
+
+            # 2. Main text in border colour
             painter.setPen(c_border)
             painter.drawText(QRectF(0, 0, s, s), Qt.AlignCenter, txt)
         # -------------------------------------------------------
@@ -769,15 +768,18 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.showMessage(title, message, QSystemTrayIcon.Information, 10000)
 
     def update_status(self):
-        """Starts the background update process."""
-        # 1. Instantiate the worker with current config
-        self.worker = BatteryWorker(self.headsetcontrol_path, self.use_test_device)
-        
-        # 2. Connect the worker's signal to the GUI update slot
-        self.worker.status_received.connect(self.on_battery_result)
-        
-        # 3. Start the thread (Does not block the GUI)
-        self.worker.start()
+        """Starts the background update process.
+
+        Skips if a previous query is still running to avoid overlapping
+        threads and potential out-of-order signal delivery.
+        """
+        if hasattr(self, '_worker') and self._worker.isRunning():
+            logger.debug("update_status: previous worker still running, skipping tick")
+            return
+
+        self._worker = BatteryWorker(self.headsetcontrol_path, self.use_test_device)
+        self._worker.status_received.connect(self.on_battery_result)
+        self._worker.start()
 
     def on_battery_result(self, data):
         """Slot that receives data from the worker thread and updates the UI."""

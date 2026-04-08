@@ -60,7 +60,11 @@ def _parse_json(data: dict) -> dict:
     if level is None:
         return {"status": "error", "error": "Disconnected", "name": device_name}
 
-    numeric_level = int(level)
+    try:
+        numeric_level = int(level)
+    except (ValueError, TypeError):
+        return {"status": "error", "error": "Disconnected", "name": device_name}
+
     is_charging = (status_str == "BATTERY_CHARGING")
 
     return {
@@ -127,6 +131,6 @@ def parse_headsetcontrol_output(raw_output: str) -> dict:
         try:
             data = json.loads(stripped)
             return _parse_json(data)
-        except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+        except (json.JSONDecodeError, KeyError, IndexError, TypeError, AttributeError):
             pass  # fall through to text parsing
     return _parse_text(raw_output)

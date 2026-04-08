@@ -17,10 +17,41 @@ logger = logging.getLogger(__name__)
 CREATE_NO_WINDOW = 0x08000000 if os.name == 'nt' else 0
 
 
+def fetch_battery_status(binary_path: str, use_test_device: bool) -> dict:
+    """Run headsetcontrol and return a parsed status dict.
+
+    Pure function with no Qt dependency — designed to be called from a
+    background thread and easily unit-tested with a mocked subprocess.
+    """
+    if not binary_path:
+        return {"status": "error", "error": "Binary Missing"}
+
+    try:
+        cmd_args = [binary_path]
+        if use_test_device:
+            cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
+        cmd_args.extend(['-o', 'json', '-b'])
+
+        result = subprocess.run(
+            cmd_args,
+            capture_output=True,
+            text=True,
+            creationflags=CREATE_NO_WINDOW
+        )
+        # Some headsetcontrol versions write to stderr on non-zero exit
+        output = result.stdout or result.stderr
+        logger.debug(f"headsetcontrol exit={result.returncode}, output={output!r}")
+        return parse_headsetcontrol_output(output)
+
+    except Exception as e:
+        logger.error(f"Unexpected exception in fetch_battery_status: {e}")
+        return {"status": "error", "error": "Execution Failed"}
+
+
 class BatteryWorker(QThread):
     """
-    Runs headsetcontrol in a background thread and emits the parsed result
-    via status_received so the UI thread is never blocked.
+    Thin Qt wrapper: runs fetch_battery_status() in a background thread and
+    emits the result via status_received so the UI thread is never blocked.
     """
     status_received = Signal(dict)
 
@@ -31,27 +62,6 @@ class BatteryWorker(QThread):
 
     def run(self):
         """Executed in a separate thread by Qt."""
-        if not self.binary_path:
-            self.status_received.emit({"status": "error", "error": "Binary Missing"})
-            return
-
-        try:
-            cmd_args = [self.binary_path]
-            if self.use_test_device:
-                cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
-            cmd_args.extend(['-o', 'json', '-b'])
-
-            result = subprocess.run(
-                cmd_args,
-                capture_output=True,
-                text=True,
-                creationflags=CREATE_NO_WINDOW
-            )
-            # Some headsetcontrol versions write to stderr on non-zero exit
-            output = result.stdout or result.stderr
-            logger.debug(f"headsetcontrol exit={result.returncode}, output={output!r}")
-            self.status_received.emit(parse_headsetcontrol_output(output))
-
-        except Exception as e:
-            logger.error(f"Unexpected exception in BatteryWorker: {e}")
-            self.status_received.emit({"status": "error", "error": "Execution Failed"})
+        self.status_received.emit(
+            fetch_battery_status(self.binary_path, self.use_test_device)
+        )
