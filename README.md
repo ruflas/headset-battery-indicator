@@ -23,6 +23,7 @@ It uses **PySide6 (Qt)** for the graphical interface and works seamlessly with *
 - [Usage](#usage)
 - [Command-Line Options](#command-line-options)
 - [Autostart](#autostart)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -113,9 +114,9 @@ If you prefer to run the Python script directly or contribute to the code:
    headset-battery-indicator
    ```
 
-4. **Run just the script**
+4. **Run from source**
     ```bash
-    python headset_battery_indicator.py
+    python -m headset_battery_indicator
     ```
 ---
 
@@ -164,6 +165,72 @@ To run the indicator automatically on login:
    - **Source install:** `headset-battery-indicator`
 
 Your settings and preferences will be restored automatically each time.
+
+## 🔧 Troubleshooting
+
+### "HeadsetControl binary not found"
+
+The app requires `headsetcontrol` to be installed separately and available in your `PATH`.
+
+- **Fedora / RHEL:** `sudo dnf install headsetcontrol`
+- **Debian / Ubuntu:** `sudo apt install headsetcontrol`
+- **Manual install:** see the [HeadsetControl releases page](https://github.com/Sapd/HeadsetControl/releases)
+
+Verify it works before launching the indicator:
+```bash
+headsetcontrol -b
+```
+
+---
+
+### Tray icon does not appear
+
+Some desktop environments require a system tray extension:
+
+| DE | Fix |
+| --- | --- |
+| **GNOME** | Install [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) |
+| **KDE Plasma** | Works out of the box |
+| **XFCE / Cinnamon** | Works out of the box |
+
+Also make sure `QT_QPA_PLATFORM` is not set to `offscreen`.
+
+---
+
+### USB permission denied / headset not detected
+
+headsetcontrol needs access to the USB device. Add a udev rule:
+
+```bash
+# Download and install the udev rules bundled with headsetcontrol:
+sudo curl -o /etc/udev/rules.d/70-headsetcontrol.rules \
+  https://raw.githubusercontent.com/Sapd/HeadsetControl/master/udev/70-headsetcontrol.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Then re-plug the headset.
+
+---
+
+### Debugging the indicator
+
+Launch with `-debug` to get live log output and an interactive command prompt:
+
+```bash
+# AppImage:
+./Headset_Battery_Indicator-*.AppImage -debug
+
+# Source install:
+python -m headset_battery_indicator -debug
+```
+
+The rotating log file is always written to:
+
+```text
+~/.local/share/HeadsetBatteryIndicator/logs/app.log
+```
+
+---
 
 ## Credits
 - Default icons provided by the [GNOME Adwaita Icon Theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme).

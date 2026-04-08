@@ -9,8 +9,8 @@ import logging
 import shutil
 import threading
 from logging.handlers import RotatingFileHandler
-from .parsing import parse_headsetcontrol_output
-from PySide6.QtCore import QTimer, QSettings, Signal, Slot, QThread, Qt, QRectF
+from .worker import BatteryWorker
+from PySide6.QtCore import QTimer, QSettings, Signal, Slot, Qt, QRectF
 from PySide6.QtGui import QIcon, QAction, QActionGroup, QPainter, QPixmap, QColor, QFont, QPen, QBrush
 from PySide6.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QDialog, 
                                QVBoxLayout, QPushButton, QColorDialog, QComboBox, 
@@ -157,45 +157,6 @@ class PreferencesDialog(QDialog):
         
         self.settings_saved.emit()
         self.accept()
-
-class BatteryWorker(QThread):
-    """
-    Worker thread to execute the headsetcontrol command in the background.
-    Optimized to filter out 'Status' or 'Found' lines and capture real names.
-    """
-    status_received = Signal(dict)
-
-    def __init__(self, binary_path, use_test_device):
-        super().__init__()
-        self.binary_path = binary_path
-        self.use_test_device = use_test_device
-
-    def run(self):
-        """This code runs in a separate thread."""
-        if not self.binary_path:
-            self.status_received.emit({"status": "error", "error": "Binary Missing"})
-            return
-
-        try:
-            cmd_args = [self.binary_path]
-            if self.use_test_device:
-                cmd_args.extend(['--test-device', '[0xf00b:0xa00c]'])
-            cmd_args.extend(['-o', 'json', '-b'])
-
-            result = subprocess.run(
-                cmd_args,
-                capture_output=True,
-                text=True,
-                creationflags=CREATE_NO_WINDOW
-            )
-            # Some headsetcontrol versions write to stderr on non-zero exit
-            output = result.stdout or result.stderr
-            logger.debug(f"WORKER: headsetcontrol exit={result.returncode}, output={output!r}")
-            self.status_received.emit(parse_headsetcontrol_output(output))
-
-        except Exception as e:
-            logger.error(f"WORKER: Unexpected exception: {e}")
-            self.status_received.emit({"status": "error", "error": "Execution Failed"})
 
 class HeadsetBatteryTray(QSystemTrayIcon):
     command_received = Signal(str)
