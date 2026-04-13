@@ -779,6 +779,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
         self._worker = BatteryWorker(self.headsetcontrol_path, self.use_test_device)
         self._worker.status_received.connect(self.on_battery_result)
+        self._worker.finished.connect(self._worker.deleteLater)
         self._worker.start()
 
     def on_battery_result(self, data):
