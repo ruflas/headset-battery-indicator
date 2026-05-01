@@ -282,6 +282,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
     # ------------------------------------------------------------------ #
 
     def open_log_folder(self) -> None:
+        os.makedirs(LOG_DIR, exist_ok=True)
         logger.info(f"Opening log folder: {LOG_DIR}")
         QDesktopServices.openUrl(QUrl.fromLocalFile(LOG_DIR))
 

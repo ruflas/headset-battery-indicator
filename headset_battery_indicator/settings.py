@@ -9,11 +9,19 @@ and emitting signals when values change.
 """
 
 import logging
+import re
 from typing import Optional
 
 from PySide6.QtCore import QSettings, Signal, QObject
 
 logger = logging.getLogger(__name__)
+
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _is_valid_hex_color(value: str) -> bool:
+    """Return True if *value* is a valid 6-digit HTML hex color (e.g. '#A1B2C3')."""
+    return bool(_HEX_COLOR_RE.match(str(value)))
 
 
 class AppSettings(QObject):
@@ -157,6 +165,9 @@ class AppSettings(QObject):
 
     @icon_fill_color.setter
     def icon_fill_color(self, value: str) -> None:
+        if not _is_valid_hex_color(value):
+            logger.warning(f"Invalid hex color ignored: iconFillColor={value!r}")
+            return
         if self._icon_fill_color != value:
             self._icon_fill_color = value
             self._settings.setValue("iconFillColor", value)
@@ -170,6 +181,9 @@ class AppSettings(QObject):
 
     @icon_border_color.setter
     def icon_border_color(self, value: str) -> None:
+        if not _is_valid_hex_color(value):
+            logger.warning(f"Invalid hex color ignored: iconBorderColor={value!r}")
+            return
         if self._icon_border_color != value:
             self._icon_border_color = value
             self._settings.setValue("iconBorderColor", value)
