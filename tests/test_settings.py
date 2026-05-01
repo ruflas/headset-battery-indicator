@@ -9,29 +9,11 @@ available for QObject/signal usage.  QSettings is redirected to a
 per-test INI file via monkeypatch so real user settings are never touched.
 """
 
-import pytest
-from PySide6.QtCore import QSettings
-
 from headset_battery_indicator.settings import AppSettings
 
 
 # ---------------------------------------------------------------------------
-# Fixture: isolated AppSettings backed by a temp INI file
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def settings(qapp, tmp_path, monkeypatch):
-    """Return an AppSettings instance that writes to a throw-away INI file."""
-    ini = str(tmp_path / "settings.ini")
-    monkeypatch.setattr(
-        "headset_battery_indicator.settings.QSettings",
-        lambda: QSettings(ini, QSettings.Format.IniFormat),
-    )
-    return AppSettings()
-
-
-# ---------------------------------------------------------------------------
-# Default values
+# Default values  (settings fixture provided by conftest.py)
 # ---------------------------------------------------------------------------
 
 class TestDefaults:
@@ -255,3 +237,61 @@ class TestBatchOps:
         settings.reset_to_defaults()
 
         assert 0 in received  # reset fired signal with default value
+
+
+# ---------------------------------------------------------------------------
+# Hex color validation
+# ---------------------------------------------------------------------------
+
+class TestColorValidation:
+    def test_valid_lowercase_hex_accepted(self, settings):
+        settings.icon_fill_color = "#aabbcc"
+        assert settings.icon_fill_color == "#aabbcc"
+
+    def test_valid_uppercase_hex_accepted(self, settings):
+        settings.icon_fill_color = "#AABBCC"
+        assert settings.icon_fill_color == "#AABBCC"
+
+    def test_valid_mixed_case_hex_accepted(self, settings):
+        settings.icon_fill_color = "#aAbBcC"
+        assert settings.icon_fill_color == "#aAbBcC"
+
+    def test_invalid_no_hash_rejected(self, settings):
+        original = settings.icon_fill_color
+        settings.icon_fill_color = "FF0000"
+        assert settings.icon_fill_color == original
+
+    def test_invalid_short_hex_rejected(self, settings):
+        original = settings.icon_fill_color
+        settings.icon_fill_color = "#FFF"
+        assert settings.icon_fill_color == original
+
+    def test_invalid_8digit_hex_rejected(self, settings):
+        original = settings.icon_fill_color
+        settings.icon_fill_color = "#FF0000FF"
+        assert settings.icon_fill_color == original
+
+    def test_invalid_non_hex_chars_rejected(self, settings):
+        original = settings.icon_fill_color
+        settings.icon_fill_color = "#GGHHII"
+        assert settings.icon_fill_color == original
+
+    def test_empty_string_rejected(self, settings):
+        original = settings.icon_fill_color
+        settings.icon_fill_color = ""
+        assert settings.icon_fill_color == original
+
+    def test_invalid_color_does_not_emit_signal(self, settings):
+        received = []
+        settings.icon_fill_color_changed.connect(received.append)
+        settings.icon_fill_color = "not-a-color"
+        assert received == []
+
+    def test_border_color_same_validation(self, settings):
+        original = settings.icon_border_color
+        settings.icon_border_color = "invalid"
+        assert settings.icon_border_color == original
+
+    def test_border_color_valid_accepted(self, settings):
+        settings.icon_border_color = "#123456"
+        assert settings.icon_border_color == "#123456"
