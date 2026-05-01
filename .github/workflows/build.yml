@@ -33,6 +33,9 @@ jobs:
         pip install --no-deps -e .
 
     - name: Run tests
+      env:
+        QT_QPA_PLATFORM: offscreen
+        QT_X11_NO_MITSHM: 1
       run: xvfb-run --auto-servernum python -m pytest tests/ -v
 
   build-linux:
