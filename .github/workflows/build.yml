@@ -57,7 +57,7 @@ jobs:
 
     - name: Package with Briefcase
       run: |
-        briefcase package linux appimage --no-input
+        briefcase package linux appimage --no-docker --no-input
 
     - name: Upload AppImage
       uses: actions/upload-artifact@v4
