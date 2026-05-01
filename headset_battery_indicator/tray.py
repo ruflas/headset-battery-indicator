@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 import threading
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from PySide6.QtCore import QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
@@ -246,7 +246,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         title: str,
         options: Dict[str, int],
         current_value: int,
-        slot,
+        slot: Callable[[QAction], None],
     ) -> QMenu:
         """Build a submenu with an exclusive group of checkable actions."""
         menu = QMenu(title)
