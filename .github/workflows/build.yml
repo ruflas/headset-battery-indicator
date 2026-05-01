@@ -60,7 +60,8 @@ jobs:
         briefcase package linux appimage --no-docker --no-input
 
     - name: Upload AppImage
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
+        name: Headset-Battery-Indicator-AppImage
         path: dist/*.AppImage
         retention-days: 30
