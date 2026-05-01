@@ -180,7 +180,7 @@ class BatteryIconRenderer:
         body = QRectF(x_start, y_start + h_nub, w_total, h_body)
 
         # Draw body outline
-        painter.setPen(QPen(border_color, int(size * 0.06 * scale_factor)))
+        painter.setPen(QPen(border_color, pen_width))
         painter.setBrush(Qt.NoBrush)
         painter.drawRoundedRect(body, size // 15, size // 15)
 
@@ -190,7 +190,7 @@ class BatteryIconRenderer:
 
         # Draw fill (from bottom)
         if percentage > 0:
-            pad = int(size * 0.06 * scale_factor) * 1.5
+            pad = pen_width * 1.5
             fill_h = (h_body - 2 * pad) * (percentage / 100.0)
             if fill_h > 0:
                 y_fill = (body.y() + body.height() - pad) - fill_h
