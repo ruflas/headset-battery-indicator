@@ -57,6 +57,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.use_test_device = False
         self.last_battery_data: Optional[Dict[str, Any]] = None
         self.notified_low_battery = False  # must be set before first update_status()
+        self._worker: Optional[BatteryWorker] = None  # must be set before first update_status()
         self.app_settings = app_settings
 
         if debug_mode:
@@ -396,14 +397,24 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         Skips if the previous worker is still running to avoid overlapping
         threads and out-of-order signal delivery.
         """
-        if hasattr(self, "_worker") and self._worker.isRunning():
+        if self._worker is not None and self._worker.isRunning():
             logger.debug("update_status: previous worker still running, skipping.")
             return
 
         self._worker = BatteryWorker(self.headsetcontrol_path, self.use_test_device)
         self._worker.status_received.connect(self.on_battery_result)
-        self._worker.finished.connect(self._worker.deleteLater)
+        self._worker.finished.connect(self._on_worker_finished)
         self._worker.start()
+
+    def _on_worker_finished(self) -> None:
+        """Clear the worker reference and schedule C++ object deletion.
+
+        Must null out self._worker BEFORE deleteLater so the next
+        update_status call never touches a dead C++ wrapper.
+        """
+        worker, self._worker = self._worker, None
+        if worker is not None:
+            worker.deleteLater()
 
     @Slot(dict)
     def on_battery_result(self, data: Dict[str, Any]) -> None:
