@@ -24,7 +24,7 @@ jobs:
         sudo apt-get install -y -q libgl1 libegl1 libxkbcommon-x11-0 \
           libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
           libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 \
-          libxcb-xinerama0 xvfb
+          libxcb-xinerama0 libxcb-cursor0 xvfb
 
     - name: Install test dependencies
       run: |
@@ -33,6 +33,9 @@ jobs:
         pip install --no-deps -e .
 
     - name: Run tests
+      env:
+        QT_QPA_PLATFORM: offscreen
+        QT_X11_NO_MITSHM: 1
       run: xvfb-run --auto-servernum python -m pytest tests/ -v
 
   build-linux:
@@ -54,10 +57,11 @@ jobs:
 
     - name: Package with Briefcase
       run: |
-        briefcase package linux appimage --no-input
+        briefcase package linux appimage --no-docker --no-input
 
     - name: Upload AppImage
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
+        name: Headset-Battery-Indicator-AppImage
         path: dist/*.AppImage
         retention-days: 30
