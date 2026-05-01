@@ -1,0 +1,21 @@
+# Normalize line endings: always LF in the repo, checkout as-is on each OS
+* text=auto
+
+# Explicitly LF for source files regardless of platform
+*.py    text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.cfg   text eol=lf
+*.ini   text eol=lf
+*.txt   text eol=lf
+*.svg   text eol=lf
+*.desktop text eol=lf
+*.spec  text eol=lf
+*.in    text eol=lf
+
+# Binary — never mangle
+*.png   binary
+*.jpg   binary
+*.ico   binary
