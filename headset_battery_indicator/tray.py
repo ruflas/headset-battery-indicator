@@ -89,8 +89,11 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             )
             self.setToolTip("ERROR: HeadsetControl not found.")
 
-        self.apply_saved_settings()
+        # Defer startup commands so the tray icon appears immediately.
+        # singleShot(0) fires on the first event-loop tick, after __init__ returns.
+        QTimer.singleShot(0, self.apply_saved_settings)
 
+        self._action_groups: list = []  # keeps QActionGroup Python refs alive (Bug C)
         self.menu = QMenu()
         self.setup_menu()
         self.setContextMenu(self.menu)
@@ -256,6 +259,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             menu.addAction(action)
             group.addAction(action)
         group.triggered.connect(slot)
+        self._action_groups.append(group)  # prevent Python GC from dropping the wrapper
         return menu
 
     # ------------------------------------------------------------------ #
