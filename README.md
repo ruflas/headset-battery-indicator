@@ -2,24 +2,24 @@
 
 [![License](https://img.shields.io/github/license/ruflas/headset-battery-indicator)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/ruflas/headset-battery-indicator)](https://github.com/ruflas/headset-battery-indicator/releases)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![Downloads](https://img.shields.io/github/downloads/ruflas/headset-battery-indicator/total)](https://github.com/ruflas/headset-battery-indicator/releases/latest)
 
-A lightweight, modern tray indicator that shows your **wireless headset’s battery level**, **charging status**, and lets you **control LEDs and sidetone** — all powered by [HeadsetControl](https://github.com/Sapd/HeadsetControl).
+A lightweight, modern tray indicator that shows your **wireless headset's battery level** and **charging status**, with controls for LEDs, sidetone, ChatMix, and more — powered by [HeadsetControl](https://github.com/Sapd/HeadsetControl) and built with **PySide6 (Qt)**.
 
-It uses **PySide6 (Qt)** for the graphical interface and works seamlessly with **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desktop environments ans also macos and Windows.
+Works on **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desktop environments.
 
 ![Screenshot of the tray icon](screenshot.png)
 
 ---
 
 ## 📘 Table of Contents
-- [About](#about)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [Option 1: AppImage (Recommended)](#option-1-appimage-recommended)
-  - [Option 2: From Source](#option-2-from-source)
+  - [Option 2: Fedora COPR](#option-2-fedora-copr)
+  - [Option 3: From Source](#option-3-from-source)
 - [Usage](#usage)
 - [Command-Line Options](#command-line-options)
 - [Autostart](#autostart)
@@ -27,38 +27,28 @@ It uses **PySide6 (Qt)** for the graphical interface and works seamlessly with *
 
 ---
 
-## 💡 About
-
-`Headset Battery Indicator` is a simple GUI front-end for [HeadsetControl](https://github.com/Sapd/HeadsetControl).  
-It provides a clean and convenient way to monitor your headset battery and manage device options directly from your system tray — without opening a terminal.
-
-> ⚠️ This tool **depends entirely on HeadsetControl** for hardware communication.  
-> Make sure `headsetcontrol` is installed and working on your system before running this indicator.
-
----
-
 ## ✨ Features
 
-- **Dynamic Tray Icon** — Displays live battery percentage and charging state.
-- **Custom Notifications** — Low-battery alerts with optional headset sound.
-- **Device Control** — Toggle LEDs and adjust sidetone directly.
-- **Context Menu** — Right-click for quick access to status and settings.
-- **Persistent Configuration** — Saves preferences between sessions.
-- **Low Resource Usage** — Lightweight and non-intrusive background service.
-- **Device Info** - Shows headset name and current status.
-- **Sidetone Control** - Adjust microphone sidetone volume.
-- **ChatMix Control:** Added a new submenu to precisely set the ChatMix level (0-128, with presets like "Game Max," "Center," and "Chat Max").
-- **Auto-Off Time Setting:** Added a menu to configure the automatic power-off time (0, 10, 30, 60, or 90 minutes), preventing the headset from dying when idle.
-- **Advanced Diagnostics (New!)**: Includes a permanent, rotating log file (app.log) and a dedicated -debug mode with commands (log-test, setIcon) for easy troubleshooting and user support.
+- **Dynamic Tray Icon** — Live battery percentage and charging state rendered in real time.
+- **Low-Battery Notifications** — Desktop alerts with optional headset sound when battery drops below your threshold.
+- **Preferences Dialog** — Customize icon colors, orientation, scale, text overlay, poll interval, and notification threshold.
+- **Device Control** — Toggle LEDs, adjust sidetone, set ChatMix level, and configure auto power-off time.
+- **Persistent Configuration** — All preferences are saved between sessions automatically.
+- **Non-Blocking Polling** — Hardware queries run in a background thread; the UI never freezes.
+- **Debug Mode** — Interactive console with live log output for troubleshooting.
+
 ---
 
 ## 🧩 Requirements
 
-| Dependency | Required | Description |
-|-------------|-----------|-------------|
-| [HeadsetControl](https://github.com/Sapd/HeadsetControl) | ✅ | Hardware communication backend |
-| Python 3 | ✅ | Runtime environment |
-| PySide6 | ✅ | GUI framework (Qt for Python) |
+| Dependency | Description |
+|---|---|
+| [HeadsetControl](https://github.com/Sapd/HeadsetControl) | Hardware communication backend — must be installed separately |
+| Python 3.8+ | Runtime environment |
+| PySide6 | Qt GUI framework |
+
+> ⚠️ This app **depends entirely on HeadsetControl** for hardware communication.  
+> Make sure `headsetcontrol` is installed and working before running the indicator.
 
 ---
 
@@ -66,12 +56,9 @@ It provides a clean and convenient way to monitor your headset battery and manag
 
 ### Option 1: AppImage (Recommended)
 
-This is the easiest way to run the indicator — no need to install Python or dependencies (just headsetcontrol).
+No need to install Python or PySide6 — just headsetcontrol.
 
-> **Make sure `headsetcontrol` is installed first.**
-
-1. **Download the latest AppImage**
-   from the [Releases page](https://github.com/ruflas/headset-battery-indicator/releases/latest).
+1. **Download** the latest AppImage from the [Releases page](https://github.com/ruflas/headset-battery-indicator/releases/latest).
 
 2. **Make it executable:**
    ```bash
@@ -83,15 +70,22 @@ This is the easiest way to run the indicator — no need to install Python or de
    ./Headset_Battery_Indicator-*.AppImage
    ```
 
-You can move it to a folder like `~/.local/bin` and add it to your desktop’s “Autostart” list.
+You can move it to `~/.local/bin` and add it to your desktop's autostart list.
 
 ---
 
-### Option 2: From Source (Advanced)
+### Option 2: Fedora COPR
 
-If you prefer to run the Python script directly or contribute to the code:
+```bash
+sudo dnf copr enable ruflas/headset-battery-indicator
+sudo dnf install headset-battery-indicator
+```
 
-1. **Install Dependencies**
+---
+
+### Option 3: From Source
+
+1. **Install system dependencies:**
 
    ```bash
    # Fedora:
@@ -101,7 +95,7 @@ If you prefer to run the Python script directly or contribute to the code:
    sudo apt install headsetcontrol python3-pyside6
    ```
 
-2. **Clone and Install**
+2. **Clone and install:**
 
    ```bash
    git clone https://github.com/ruflas/headset-battery-indicator.git
@@ -109,48 +103,58 @@ If you prefer to run the Python script directly or contribute to the code:
    pip install .
    ```
 
-3. **Run**
+3. **Run:**
    ```bash
    headset-battery-indicator
+   # or
+   python -m headset_battery_indicator
    ```
 
-4. **Run from source**
-    ```bash
-    python -m headset_battery_indicator
-    ```
 ---
 
 ## ⚙️ Usage
 
-Once launched, the indicator will appear in your system tray.
+Once launched, the indicator appears in your system tray.
 
-### 🖱️ Right-Click Menu
-The context menu provides:
-- **Device Info:** Shows headset name and current status.
-- **Notifications:** Enable or disable low-battery alerts.
-- **Threshold Setting:** Choose the battery level for notifications (10%, 20%, 30%, etc.).
-- **LED Control:** Turn headset lighting on or off.
-- **Sidetone Control:** Adjust microphone sidetone volume.
+### Right-Click Menu
 
-All your preferences are automatically saved.
+Right-clicking the tray icon gives you:
 
-![Screenshot of configuration](screenshot2.png)
+- **Device name and current status** (read-only info)
+- **Preferences** — opens the configuration dialog
+- **Notify on low battery** — toggle low-battery alerts
+- **LED, Sidetone, ChatMix, Auto-Off** — direct device controls
+
+![Screenshot of the context menu](screenshot2.png)
+
+### Preferences Dialog
+
+Open via the tray menu → **Preferences**. From here you can configure:
+
+- Icon fill and border colors (color picker or `#RRGGBB` hex input)
+- Battery icon orientation (horizontal / vertical)
+- Icon zoom/scale
+- Percentage text overlay
+- Notification threshold (5–95%)
+- Poll interval (10–300 seconds)
+
+All settings take effect immediately and are saved automatically.
 
 ---
 
 ## 🧠 Command-Line Options
 
-You can launch the app with optional arguments:
-
 | Option | Description |
-|--------|--------------|
+|---|---|
 | `-h`, `--help` | Show help message and exit |
-| `-debug` | Enable interactive debug mode (type commands like `notification` or `setIcon battery-100-symbolic`) |
+| `-debug` | Enable interactive debug mode with live log output |
 
 Example:
 ```bash
 ./Headset_Battery_Indicator-*.AppImage -debug
 ```
+
+In debug mode, available commands include `setIcon 75`, `setIcon 100 charging`, `notification`, `update`, `mockon`, `mockoff`, `resume`, and `exit`.
 
 ---
 
@@ -158,37 +162,36 @@ Example:
 
 To run the indicator automatically on login:
 
-1. Open your **System Settings**.
-2. Go to **Startup and Shutdown** → **Autostart** (KDE) or **Startup Applications** (GNOME/XFCE).
+1. Open **System Settings**.
+2. Go to **Startup and Shutdown → Autostart** (KDE) or **Startup Applications** (GNOME/XFCE).
 3. Add a new entry:
    - **AppImage:** `/full/path/to/Headset_Battery_Indicator-*.AppImage`
    - **Source install:** `headset-battery-indicator`
 
-Your settings and preferences will be restored automatically each time.
+---
 
 ## 🔧 Troubleshooting
 
 ### "HeadsetControl binary not found"
 
-The app requires `headsetcontrol` to be installed separately and available in your `PATH`.
+Install `headsetcontrol` and verify it works before launching the indicator:
 
-- **Fedora / RHEL:** `sudo dnf install headsetcontrol`
-- **Debian / Ubuntu:** `sudo apt install headsetcontrol`
-- **Manual install:** see the [HeadsetControl releases page](https://github.com/Sapd/HeadsetControl/releases)
-
-Verify it works before launching the indicator:
 ```bash
 headsetcontrol -b
 ```
+
+Installation by distro:
+
+- **Fedora / RHEL:** `sudo dnf install headsetcontrol`
+- **Debian / Ubuntu:** `sudo apt install headsetcontrol`
+- **Manual:** see the [HeadsetControl releases page](https://github.com/Sapd/HeadsetControl/releases)
 
 ---
 
 ### Tray icon does not appear
 
-Some desktop environments require a system tray extension:
-
-| DE | Fix |
-| --- | --- |
+| Desktop Environment | Fix |
+|---|---|
 | **GNOME** | Install [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) |
 | **KDE Plasma** | Works out of the box |
 | **XFCE / Cinnamon** | Works out of the box |
@@ -199,10 +202,9 @@ Also make sure `QT_QPA_PLATFORM` is not set to `offscreen`.
 
 ### USB permission denied / headset not detected
 
-headsetcontrol needs access to the USB device. Add a udev rule:
+headsetcontrol needs USB device access. Install the udev rules:
 
 ```bash
-# Download and install the udev rules bundled with headsetcontrol:
 sudo curl -o /etc/udev/rules.d/70-headsetcontrol.rules \
   https://raw.githubusercontent.com/Sapd/HeadsetControl/master/udev/70-headsetcontrol.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger
@@ -212,9 +214,9 @@ Then re-plug the headset.
 
 ---
 
-### Debugging the indicator
+### Debugging
 
-Launch with `-debug` to get live log output and an interactive command prompt:
+Launch with `-debug` for live log output and an interactive console:
 
 ```bash
 # AppImage:
@@ -226,11 +228,6 @@ python -m headset_battery_indicator -debug
 
 The rotating log file is always written to:
 
-```text
+```
 ~/.local/share/HeadsetBatteryIndicator/logs/app.log
 ```
-
----
-
-## Credits
-- Default icons provided by the [GNOME Adwaita Icon Theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme).
