@@ -26,8 +26,6 @@ from .worker import BatteryWorker
 
 logger = logging.getLogger(__name__)
 
-UPDATE_INTERVAL_MS = 60_000
-
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 
 LOG_DIR = os.path.join(
@@ -81,6 +79,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.app_settings.icon_orientation_changed.connect(self._on_visual_settings_changed)
         self.app_settings.icon_scale_changed.connect(self._on_visual_settings_changed)
         self.app_settings.icon_show_text_changed.connect(self._on_visual_settings_changed)
+        self.app_settings.poll_interval_changed.connect(self._on_poll_interval_changed)
+        self.app_settings.notify_threshold_changed.connect(self._on_threshold_changed)
 
         if not self.headsetcontrol_path:
             logger.critical("HeadsetControl binary not found. Functionality disabled.")
@@ -102,7 +102,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_status)
         if self.headsetcontrol_path:
-            self.timer.start(UPDATE_INTERVAL_MS)
+            self.timer.start(self.app_settings.poll_interval * 1000)
 
         self.update_status()
         self.setVisible(True)
@@ -171,14 +171,6 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.notify_action.setChecked(self.app_settings.notify_enabled)
         self.notify_action.toggled.connect(self.on_notify_toggled)
         self.menu.addAction(self.notify_action)
-
-        self.threshold_menu = self._make_level_menu(
-            "Set Notification Level",
-            {f"{lvl}%": lvl for lvl in [10, 20, 30, 40, 50]},
-            self.app_settings.notify_threshold,
-            self.on_threshold_changed,
-        )
-        self.menu.addMenu(self.threshold_menu)
 
         # Device controls
         self.menu.addSeparator()
@@ -318,10 +310,11 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 check=True,
                 capture_output=True,
                 text=True,
+                timeout=10,
                 creationflags=CREATE_NO_WINDOW,
             )
             logger.info(f"Ran command: {' '.join(command)}")
-        except (subprocess.CalledProcessError, OSError) as e:
+        except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired) as e:
             logger.error(f"Command failed: {' '.join(command)} — {e}")
             self.send_notification(
                 "Headset Command Failed",
@@ -356,10 +349,14 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.notified_low_battery = False
         logger.info(f"Notifications: {checked}")
 
-    def on_threshold_changed(self, action: QAction) -> None:
-        self.app_settings.notify_threshold = action.data()
+    def _on_threshold_changed(self, value: int) -> None:
         self.notified_low_battery = False
-        logger.info(f"Notification threshold: {self.app_settings.notify_threshold}%")
+        logger.info(f"Notification threshold changed: {value}%")
+
+    def _on_poll_interval_changed(self, seconds: int) -> None:
+        if self.timer.isActive():
+            self.timer.start(seconds * 1000)
+        logger.info(f"Poll interval changed: {seconds}s")
 
     def on_lights_toggled(self, checked: bool) -> None:
         self.app_settings.lights_enabled = checked
@@ -548,7 +545,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
                 self.update_status()
 
             elif command == "resume":
-                self.timer.start(UPDATE_INTERVAL_MS)
+                self.timer.start(self.app_settings.poll_interval * 1000)
                 self.update_status()
                 QApplication.processEvents()
 

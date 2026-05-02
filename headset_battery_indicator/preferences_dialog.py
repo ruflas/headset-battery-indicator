@@ -1,7 +1,8 @@
 """
 headset_battery_indicator.preferences_dialog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Preferences dialog for visual icon settings (colors, orientation, scale, text).
+Preferences dialog for visual icon settings (colors, orientation, scale, text)
+and notification/polling configuration.
 """
 
 from PySide6.QtCore import Signal
@@ -13,23 +14,26 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
 
-from .settings import AppSettings
+from .settings import AppSettings, _is_valid_hex_color
 
 
 class PreferencesDialog(QDialog):
-    """Dialog for visual settings (colors, orientation, scale, text overlay)."""
+    """Dialog for visual settings (colors, orientation, scale, text overlay)
+    and notification/polling configuration."""
 
     settings_saved = Signal()
 
     def __init__(self, app_settings: AppSettings, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Preferences")
-        self.resize(300, 250)
+        self.resize(340, 380)
         self.app_settings = app_settings
 
         self.temp_fill = app_settings.icon_fill_color
@@ -42,13 +46,29 @@ class PreferencesDialog(QDialog):
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
+        fill_row = QHBoxLayout()
         self.btn_fill = QPushButton()
+        self.btn_fill.setFixedWidth(32)
         self.btn_fill.clicked.connect(lambda: self._pick_color("fill"))
-        form.addRow("Fill Color:", self.btn_fill)
+        self.edit_fill = QLineEdit()
+        self.edit_fill.setPlaceholderText("#RRGGBB")
+        self.edit_fill.setMaxLength(7)
+        self.edit_fill.editingFinished.connect(lambda: self._on_hex_edited("fill"))
+        fill_row.addWidget(self.btn_fill)
+        fill_row.addWidget(self.edit_fill)
+        form.addRow("Fill Color:", fill_row)
 
+        border_row = QHBoxLayout()
         self.btn_border = QPushButton()
+        self.btn_border.setFixedWidth(32)
         self.btn_border.clicked.connect(lambda: self._pick_color("border"))
-        form.addRow("Border Color:", self.btn_border)
+        self.edit_border = QLineEdit()
+        self.edit_border.setPlaceholderText("#RRGGBB")
+        self.edit_border.setMaxLength(7)
+        self.edit_border.editingFinished.connect(lambda: self._on_hex_edited("border"))
+        border_row.addWidget(self.btn_border)
+        border_row.addWidget(self.edit_border)
+        form.addRow("Border Color:", border_row)
 
         self.combo_orient = QComboBox()
         self.combo_orient.addItems(["Horizontal", "Vertical"])
@@ -63,6 +83,18 @@ class PreferencesDialog(QDialog):
         self.chk_show_text = QCheckBox("Show percentage/bolt inside icon")
         form.addRow("Overlay Text:", self.chk_show_text)
 
+        self.spin_threshold = QSpinBox()
+        self.spin_threshold.setRange(5, 95)
+        self.spin_threshold.setSingleStep(5)
+        self.spin_threshold.setSuffix("%")
+        form.addRow("Notification Threshold:", self.spin_threshold)
+
+        self.spin_poll = QSpinBox()
+        self.spin_poll.setRange(10, 300)
+        self.spin_poll.setSingleStep(10)
+        self.spin_poll.setSuffix(" sec")
+        form.addRow("Poll Interval:", self.spin_poll)
+
         layout.addLayout(form)
 
         btns = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
@@ -74,11 +106,13 @@ class PreferencesDialog(QDialog):
         self.temp_fill = self.app_settings.icon_fill_color
         self.temp_border = self.app_settings.icon_border_color
 
-        self._update_btn_style(self.btn_fill, self.temp_fill)
-        self._update_btn_style(self.btn_border, self.temp_border)
+        self._update_color_row(self.btn_fill, self.edit_fill, self.temp_fill)
+        self._update_color_row(self.btn_border, self.edit_border, self.temp_border)
         self.combo_orient.setCurrentText(self.app_settings.icon_orientation)
         self.spin_scale.setValue(self.app_settings.icon_scale)
         self.chk_show_text.setChecked(self.app_settings.icon_show_text)
+        self.spin_threshold.setValue(self.app_settings.notify_threshold)
+        self.spin_poll.setValue(self.app_settings.poll_interval)
 
     def _pick_color(self, target: str) -> None:
         initial = QColor(self.temp_fill if target == "fill" else self.temp_border)
@@ -87,17 +121,27 @@ class PreferencesDialog(QDialog):
             hex_c = color.name()
             if target == "fill":
                 self.temp_fill = hex_c
-                self._update_btn_style(self.btn_fill, hex_c)
+                self._update_color_row(self.btn_fill, self.edit_fill, hex_c)
             else:
                 self.temp_border = hex_c
-                self._update_btn_style(self.btn_border, hex_c)
+                self._update_color_row(self.btn_border, self.edit_border, hex_c)
 
-    def _update_btn_style(self, btn: QPushButton, color_hex: str) -> None:
-        fg = "black" if QColor(color_hex).lightness() > 128 else "white"
-        btn.setText(color_hex)
-        btn.setStyleSheet(
-            f"background-color: {color_hex}; color: {fg}; border: 1px solid #555;"
-        )
+    def _on_hex_edited(self, target: str) -> None:
+        edit = self.edit_fill if target == "fill" else self.edit_border
+        btn = self.btn_fill if target == "fill" else self.btn_border
+        value = edit.text().strip()
+        if _is_valid_hex_color(value):
+            if target == "fill":
+                self.temp_fill = value
+            else:
+                self.temp_border = value
+            self._update_color_row(btn, edit, value)
+        else:
+            edit.setText(self.temp_fill if target == "fill" else self.temp_border)
+
+    def _update_color_row(self, btn: QPushButton, edit: QLineEdit, color_hex: str) -> None:
+        btn.setStyleSheet(f"background-color: {color_hex}; border: 1px solid #555;")
+        edit.setText(color_hex)
 
     def _save_settings(self) -> None:
         self.app_settings.icon_fill_color = self.temp_fill
@@ -105,6 +149,8 @@ class PreferencesDialog(QDialog):
         self.app_settings.icon_orientation = self.combo_orient.currentText()
         self.app_settings.icon_scale = self.spin_scale.value()
         self.app_settings.icon_show_text = self.chk_show_text.isChecked()
+        self.app_settings.notify_threshold = self.spin_threshold.value()
+        self.app_settings.poll_interval = self.spin_poll.value()
 
         self.settings_saved.emit()
         self.accept()

@@ -165,6 +165,12 @@ class TestExceptions:
         result = fetch_battery_status("/usr/bin/headsetcontrol", False)
         assert result == {"status": "error", "error": "Execution Failed"}
 
+    @patch("headset_battery_indicator.worker.subprocess.run",
+           side_effect=subprocess.TimeoutExpired(cmd="headsetcontrol", timeout=10))
+    def test_timeout_returns_error(self, mock_run):
+        result = fetch_battery_status("/usr/bin/headsetcontrol", False)
+        assert result == {"status": "error", "error": "Timeout"}
+
 
 # ---------------------------------------------------------------------------
 # Command construction

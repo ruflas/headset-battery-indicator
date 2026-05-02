@@ -46,6 +46,7 @@ class AppSettings(QObject):
     icon_orientation_changed = Signal(str)
     icon_scale_changed = Signal(int)
     icon_show_text_changed = Signal(bool)
+    poll_interval_changed = Signal(int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -65,6 +66,7 @@ class AppSettings(QObject):
         self._icon_orientation = self._settings.value("iconOrientation", "Horizontal", type=str)
         self._icon_scale = self._settings.value("iconScale", 75, type=int)
         self._icon_show_text = self._settings.value("iconShowText", True, type=bool)
+        self._poll_interval = self._settings.value("pollInterval", 60, type=int)
 
     # ==================== Notification Settings ====================
 
@@ -88,8 +90,7 @@ class AppSettings(QObject):
 
     @notify_threshold.setter
     def notify_threshold(self, value: int) -> None:
-        # Validate range
-        value = max(10, min(50, value))
+        value = max(5, min(95, value))
         if self._notify_threshold != value:
             self._notify_threshold = value
             self._settings.setValue("notifyThreshold", value)
@@ -233,6 +234,22 @@ class AppSettings(QObject):
             self.icon_show_text_changed.emit(value)
             logger.debug(f"Setting changed: iconShowText={value}")
 
+    # ==================== Polling ====================
+
+    @property
+    def poll_interval(self) -> int:
+        """Battery polling interval in seconds (10-300)."""
+        return self._poll_interval
+
+    @poll_interval.setter
+    def poll_interval(self, value: int) -> None:
+        value = max(10, min(300, value))
+        if self._poll_interval != value:
+            self._poll_interval = value
+            self._settings.setValue("pollInterval", value)
+            self.poll_interval_changed.emit(value)
+            logger.debug(f"Setting changed: pollInterval={value}s")
+
     # ==================== Batch Operations ====================
 
     def get_all(self) -> dict:
@@ -249,6 +266,7 @@ class AppSettings(QObject):
             "icon_orientation": self._icon_orientation,
             "icon_scale": self._icon_scale,
             "icon_show_text": self._icon_show_text,
+            "poll_interval": self._poll_interval,
         }
 
     def reset_to_defaults(self) -> None:
@@ -265,3 +283,4 @@ class AppSettings(QObject):
         self.icon_orientation = "Horizontal"
         self.icon_scale = 75
         self.icon_show_text = True
+        self.poll_interval = 60

@@ -82,11 +82,11 @@ class TestValidation:
 
     def test_notify_threshold_clamps_above(self, settings):
         settings.notify_threshold = 100
-        assert settings.notify_threshold == 50
+        assert settings.notify_threshold == 95
 
     def test_notify_threshold_clamps_below(self, settings):
         settings.notify_threshold = 0
-        assert settings.notify_threshold == 10
+        assert settings.notify_threshold == 5
 
     def test_icon_scale_clamps_above(self, settings):
         settings.icon_scale = 999
@@ -199,13 +199,13 @@ class TestSignals:
 # ---------------------------------------------------------------------------
 
 class TestBatchOps:
-    def test_get_all_returns_all_eleven_keys(self, settings):
+    def test_get_all_returns_all_keys(self, settings):
         result = settings.get_all()
         expected = {
             "notify_enabled", "notify_threshold", "lights_enabled",
             "sidetone_level", "chatmix_level", "inactive_time",
             "icon_fill_color", "icon_border_color", "icon_orientation",
-            "icon_scale", "icon_show_text",
+            "icon_scale", "icon_show_text", "poll_interval",
         }
         assert result.keys() == expected
 
@@ -295,3 +295,41 @@ class TestColorValidation:
     def test_border_color_valid_accepted(self, settings):
         settings.icon_border_color = "#123456"
         assert settings.icon_border_color == "#123456"
+
+
+# ---------------------------------------------------------------------------
+# Poll interval
+# ---------------------------------------------------------------------------
+
+class TestPollInterval:
+    def test_default(self, settings):
+        assert settings.poll_interval == 60
+
+    def test_set_valid(self, settings):
+        settings.poll_interval = 120
+        assert settings.poll_interval == 120
+
+    def test_clamps_above_max(self, settings):
+        settings.poll_interval = 999
+        assert settings.poll_interval == 300
+
+    def test_clamps_below_min(self, settings):
+        settings.poll_interval = 1
+        assert settings.poll_interval == 10
+
+    def test_signal_emitted_on_change(self, settings):
+        received = []
+        settings.poll_interval_changed.connect(received.append)
+        settings.poll_interval = 90
+        assert received == [90]
+
+    def test_signal_not_emitted_on_same_value(self, settings):
+        received = []
+        settings.poll_interval_changed.connect(received.append)
+        settings.poll_interval = 60  # already default
+        assert received == []
+
+    def test_reset_restores_default(self, settings):
+        settings.poll_interval = 180
+        settings.reset_to_defaults()
+        assert settings.poll_interval == 60

@@ -35,6 +35,7 @@ def fetch_battery_status(binary_path: str, use_test_device: bool) -> dict:
             cmd_args,
             capture_output=True,
             text=True,
+            timeout=10,
             creationflags=CREATE_NO_WINDOW
         )
         # Some headsetcontrol versions write to stderr on non-zero exit
@@ -42,6 +43,9 @@ def fetch_battery_status(binary_path: str, use_test_device: bool) -> dict:
         logger.debug(f"headsetcontrol exit={result.returncode}, output={output!r}")
         return parse_headsetcontrol_output(output)
 
+    except subprocess.TimeoutExpired:
+        logger.error("headsetcontrol timed out after 10s")
+        return {"status": "error", "error": "Timeout"}
     except Exception as e:
         logger.error(f"Unexpected exception in fetch_battery_status: {e}")
         return {"status": "error", "error": "Execution Failed"}
