@@ -24,41 +24,41 @@
 - **Chore:** Added `.gitattributes` to enforce LF line endings.
 - **Tests:** Added `test_settings.py` (51 tests) and `test_icon_renderer.py` (28 tests); shared fixture moved to `conftest.py`.
 
-## 2.0.2 (2024-03-29)
+## 2.0.2 (2026-03-29)
 - **Fix:** Resolved startup crash on Linux and macOS caused by Windows-only `os.startfile` dependency.
 - **Fix:** Proper file explorer integration on all platforms.
 
-## 2.0.1 (2024-03-26)
+## 2.0.1 (2026-03-26)
 - **Fix:** Device name parsing for both legacy bracket format and new parentheses format (headsetcontrol 3.x).
 - **Fix:** Graceful handling when headset powers off mid-session.
 - **Feat:** Manual refresh button added to the tray menu.
 
-## 2.0.0 (2023-12-11)
+## 2.0.0 (2025-12-11)
 - **New:** Real-time dynamic icon generation; removed SVG asset dependency entirely.
 - **New:** Preferences dialog for customization (fill color, border color, orientation, zoom, text overlay).
 - **New:** Multi-threaded hardware polling — UI never freezes during device queries.
 - **Refactor:** Complete code cleanup and architecture overhaul.
 
-## 1.4.2 (2023-12-07)
+## 1.4.2 (2025-12-07)
 - **New:** Windows support with native File Explorer integration for log folder.
 - **New:** Cross-platform debug console.
 - **New:** PyInstaller support for standalone executable packaging.
 
-## 1.4.0 (2023-12-07)
+## 1.4.0 (2025-12-07)
 - **New:** Bundled SVG icon assets (Adwaita-based) with smart fallback system.
 - **Fix:** Crash on minimalist window managers (i3wm, etc.) where system icon themes are absent.
 
-## 1.3.0 (2023-10-27)
+## 1.3.0 (2025-10-27)
 - **New:** Robust dependency checking at startup.
 - **New:** Integrated logging with rotating log files.
 - **New:** Advanced debug menu with troubleshooting actions.
 
-## 1.2.0 (2023-10-27)
+## 1.2.0 (2025-10-27)
 - **New:** ChatMix control (0–128 levels).
 - **New:** Auto-off time configuration.
 - **New:** Persistent settings via `QSettings`.
 
-## 1.1.0 (2023-10-26)
+## 1.1.0 (2025-10-26)
 - **New:** Sidetone and LED light controls in the tray menu.
 - **New:** Configurable low-battery notifications.
 - **New:** Settings saved between sessions.
