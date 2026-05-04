@@ -1,7 +1,7 @@
 Name:           python-headset-battery-indicator
 Version:        2.2.0
 Release:        1%{?dist}
-Summary:        System tray application for monitoring USB headsets (HeadsetControl GUI)
+Summary:        System tray application for monitoring USB headsets via HeadsetControl
 
 License:        GPL-3.0-or-later
 URL:            https://github.com/ruflas/headset-battery-indicator
@@ -10,10 +10,8 @@ Source0:        https://github.com/ruflas/headset-battery-indicator/archive/refs
 BuildArch:      noarch
 
 BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
-BuildRequires:  python3-build
-BuildRequires:  python3-installer
-BuildRequires:  python3-wheel
+BuildRequires:  pyproject-rpm-macros
+BuildRequires:  desktop-file-utils
 
 Requires:       headsetcontrol
 Requires:       python3-pyside6
@@ -24,23 +22,30 @@ Requires(post): hicolor-icon-theme
 Requires(postun): hicolor-icon-theme
 
 %description
-Headset Battery Indicator is a Python/Qt system tray application for monitoring and
-controlling USB headsets using the HeadsetControl backend. It allows battery monitoring,
-ChatMix adjustment, Sidetone control, and Auto-Off timing directly from the tray icon.
+Headset Battery Indicator is a Python/Qt system tray application for monitoring
+and controlling USB headsets using the HeadsetControl backend. It allows battery
+monitoring, ChatMix adjustment, Sidetone control, and Auto-Off timing directly
+from the tray icon.
+
+%generate_buildrequires
+%pyproject_buildrequires
 
 %prep
 %autosetup -n headset-battery-indicator-%{version}
 
 %build
-%py3_build
+%pyproject_wheel
 
 %install
-%py3_install
-
-%py3_shebang_fix %{buildroot}%{_bindir}/headset-battery-indicator
+%pyproject_install
+%pyproject_save_files headset_battery_indicator
 
 install -Dm0644 headset-battery-indicator.png \
     %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/headset-battery-indicator.png
+
+desktop-file-install \
+    --dir=%{buildroot}%{_datadir}/applications \
+    headset-battery-indicator.desktop
 
 %post
 update-desktop-database &> /dev/null || :
@@ -51,20 +56,21 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 update-desktop-database &> /dev/null || :
 gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
-%files
+%files -f %{pyproject_files}
 %license LICENSE
 %doc README.md
-%{python3_sitelib}/headset_battery_indicator/
-%{python3_sitelib}/headset_battery_indicator-%{version}.dist-info/
 %{_bindir}/headset-battery-indicator
 %{_datadir}/icons/hicolor/512x512/apps/headset-battery-indicator.png
+%{_datadir}/applications/headset-battery-indicator.desktop
 
 %changelog
 * Sun May 04 2026 Ruflas <ruflas@ruflas.dev> - 2.2.0-1
 - Bump to v2.2.0: Preferences Overhaul & Architecture Refactor
-- Fix BuildRequires: add python3-build, python3-installer, python3-wheel
-- Fix Requires: python3-pyside6 (lowercase, correct Fedora package name)
-- Remove .desktop file install (not present in source)
+- Migrate to modern pyproject RPM macros (pyproject_wheel, pyproject_install)
+- Add %generate_buildrequires with %pyproject_buildrequires
+- Fix Requires: python3-pyside6 (correct Fedora package name)
+- Add desktop-file-install for proper .desktop validation
+- Add .desktop file to source repo
 
 * Thu Oct 30 2025 Ruflas <ruflas@ruflas.dev> - 1.3.0-1
 - Initial Fedora RPM packaging for Headset Battery Indicator

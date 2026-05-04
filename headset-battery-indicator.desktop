@@ -1,7 +1,11 @@
 [Desktop Entry]
 Name=Headset Battery Indicator
-Comment=Monitor headset battery using HeadsetControl
+GenericName=Headset Monitor
+Comment=Monitor and control your USB headset battery and settings
 Exec=headset-battery-indicator
-Icon=headset-battery-indicator.png
+Icon=headset-battery-indicator
+Terminal=false
 Type=Application
-Categories=Utility;
+Categories=Utility;AudioVideo;
+Keywords=headset;battery;audio;tray;headsetcontrol;
+StartupNotify=false

@@ -6,5 +6,10 @@ build/
 .briefcase/
 *.spec.bak
 headsetcontrol.exe
+headset-battery-indicator.spec
+headset-battery-indicator-debug.spec
+headset-battery-indicator2.spec
+headset-battery-indicator.ico
 .claude/
 .pytest_cache/
+context.txt
