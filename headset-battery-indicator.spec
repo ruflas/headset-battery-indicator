@@ -1,4 +1,4 @@
-Name:           python-headset-battery-indicator
+Name:           headset-battery-indicator
 Version:        2.2.0
 Release:        1%{?dist}
 Summary:        System tray application for monitoring USB headsets via HeadsetControl
@@ -8,6 +8,9 @@ URL:            https://github.com/ruflas/headset-battery-indicator
 Source0:        https://github.com/ruflas/headset-battery-indicator/archive/refs/tags/v%{version}.tar.gz
 
 BuildArch:      noarch
+
+Obsoletes:      python-headset-battery-indicator < 2.3.0
+Provides:       python-headset-battery-indicator = %{version}
 
 BuildRequires:  python3-devel
 BuildRequires:  pyproject-rpm-macros
