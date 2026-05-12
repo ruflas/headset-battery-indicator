@@ -9,6 +9,7 @@ from logging.handlers import RotatingFileHandler
 
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
+from .i18n import install_translator
 from .settings import AppSettings
 from .tray import HeadsetBatteryTray, LOG_DIR, LOG_FILE
 
@@ -75,12 +76,14 @@ def main() -> None:
     app.setApplicationName("HeadsetBatteryIndicator")
     app.setQuitOnLastWindowClosed(False)
 
+    app_settings = AppSettings()
+    install_translator(app, app_settings.language)
+
     if not QSystemTrayIcon.isSystemTrayAvailable():
         logging.getLogger(__name__).critical("System tray not available. Exiting.")
         print("Error: System tray not available.")
         sys.exit(1)
 
-    app_settings = AppSettings()
     HeadsetBatteryTray(app_settings, debug_mode=debug_mode, parent=app)
 
     sys.exit(app.exec())

@@ -15,12 +15,14 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
 
+from .i18n import available_languages
 from .settings import AppSettings, _is_valid_hex_color
 
 
@@ -32,7 +34,7 @@ class PreferencesDialog(QDialog):
 
     def __init__(self, app_settings: AppSettings, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Preferences")
+        self.setWindowTitle(self.tr("Preferences"))
         self.resize(340, 380)
         self.app_settings = app_settings
 
@@ -56,7 +58,7 @@ class PreferencesDialog(QDialog):
         self.edit_fill.editingFinished.connect(lambda: self._on_hex_edited("fill"))
         fill_row.addWidget(self.btn_fill)
         fill_row.addWidget(self.edit_fill)
-        form.addRow("Fill Color:", fill_row)
+        form.addRow(self.tr("Fill Color:"), fill_row)
 
         border_row = QHBoxLayout()
         self.btn_border = QPushButton()
@@ -68,34 +70,47 @@ class PreferencesDialog(QDialog):
         self.edit_border.editingFinished.connect(lambda: self._on_hex_edited("border"))
         border_row.addWidget(self.btn_border)
         border_row.addWidget(self.edit_border)
-        form.addRow("Border Color:", border_row)
+        form.addRow(self.tr("Border Color:"), border_row)
 
+        self._orient_values = ["Horizontal", "Vertical"]
         self.combo_orient = QComboBox()
-        self.combo_orient.addItems(["Horizontal", "Vertical"])
-        form.addRow("Orientation:", self.combo_orient)
+        self.combo_orient.addItems([self.tr("Horizontal"), self.tr("Vertical")])
+        form.addRow(self.tr("Orientation:"), self.combo_orient)
 
         self.spin_scale = QSpinBox()
         self.spin_scale.setRange(50, 150)
         self.spin_scale.setSingleStep(5)
         self.spin_scale.setSuffix("%")
-        form.addRow("Icon Zoom/Scale:", self.spin_scale)
+        form.addRow(self.tr("Icon Zoom/Scale:"), self.spin_scale)
 
-        self.chk_show_text = QCheckBox("Show percentage/bolt inside icon")
-        form.addRow("Overlay Text:", self.chk_show_text)
+        self.chk_show_text = QCheckBox(self.tr("Show percentage/bolt inside icon"))
+        form.addRow(self.tr("Overlay Text:"), self.chk_show_text)
 
         self.spin_threshold = QSpinBox()
         self.spin_threshold.setRange(5, 95)
         self.spin_threshold.setSingleStep(5)
         self.spin_threshold.setSuffix("%")
-        form.addRow("Notification Threshold:", self.spin_threshold)
+        form.addRow(self.tr("Notification Threshold:"), self.spin_threshold)
 
         self.spin_poll = QSpinBox()
         self.spin_poll.setRange(10, 300)
         self.spin_poll.setSingleStep(10)
-        self.spin_poll.setSuffix(" sec")
-        form.addRow("Poll Interval:", self.spin_poll)
+        self.spin_poll.setSuffix(self.tr(" sec"))
+        form.addRow(self.tr("Poll Interval:"), self.spin_poll)
+
+        self._lang_codes = []
+        self.combo_lang = QComboBox()
+        for code, name in available_languages():
+            self._lang_codes.append(code)
+            self.combo_lang.addItem(name)
+        form.addRow(self.tr("Language:"), self.combo_lang)
+
+        self.lbl_restart = QLabel(self.tr("⚠ Restart required to apply language change."))
+        self.lbl_restart.setVisible(False)
+        self.combo_lang.currentIndexChanged.connect(lambda _: self.lbl_restart.setVisible(True))
 
         layout.addLayout(form)
+        layout.addWidget(self.lbl_restart)
 
         btns = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         btns.accepted.connect(self._save_settings)
@@ -108,11 +123,14 @@ class PreferencesDialog(QDialog):
 
         self._update_color_row(self.btn_fill, self.edit_fill, self.temp_fill)
         self._update_color_row(self.btn_border, self.edit_border, self.temp_border)
-        self.combo_orient.setCurrentText(self.app_settings.icon_orientation)
+        orient_idx = self._orient_values.index(self.app_settings.icon_orientation) if self.app_settings.icon_orientation in self._orient_values else 0
+        self.combo_orient.setCurrentIndex(orient_idx)
         self.spin_scale.setValue(self.app_settings.icon_scale)
         self.chk_show_text.setChecked(self.app_settings.icon_show_text)
         self.spin_threshold.setValue(self.app_settings.notify_threshold)
         self.spin_poll.setValue(self.app_settings.poll_interval)
+        lang_idx = self._lang_codes.index(self.app_settings.language) if self.app_settings.language in self._lang_codes else 0
+        self.combo_lang.setCurrentIndex(lang_idx)
 
     def _pick_color(self, target: str) -> None:
         initial = QColor(self.temp_fill if target == "fill" else self.temp_border)
@@ -146,11 +164,12 @@ class PreferencesDialog(QDialog):
     def _save_settings(self) -> None:
         self.app_settings.icon_fill_color = self.temp_fill
         self.app_settings.icon_border_color = self.temp_border
-        self.app_settings.icon_orientation = self.combo_orient.currentText()
+        self.app_settings.icon_orientation = self._orient_values[self.combo_orient.currentIndex()]
         self.app_settings.icon_scale = self.spin_scale.value()
         self.app_settings.icon_show_text = self.chk_show_text.isChecked()
         self.app_settings.notify_threshold = self.spin_threshold.value()
         self.app_settings.poll_interval = self.spin_poll.value()
+        self.app_settings.language = self._lang_codes[self.combo_lang.currentIndex()]
 
         self.settings_saved.emit()
         self.accept()

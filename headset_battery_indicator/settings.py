@@ -47,6 +47,7 @@ class AppSettings(QObject):
     icon_scale_changed = Signal(int)
     icon_show_text_changed = Signal(bool)
     poll_interval_changed = Signal(int)
+    language_changed = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -67,6 +68,7 @@ class AppSettings(QObject):
         self._icon_scale = self._settings.value("iconScale", 75, type=int)
         self._icon_show_text = self._settings.value("iconShowText", True, type=bool)
         self._poll_interval = self._settings.value("pollInterval", 60, type=int)
+        self._language = self._settings.value("language", "system", type=str)
 
     # ==================== Notification Settings ====================
 
@@ -249,6 +251,21 @@ class AppSettings(QObject):
             self._settings.setValue("pollInterval", value)
             self.poll_interval_changed.emit(value)
             logger.debug(f"Setting changed: pollInterval={value}s")
+
+    # ==================== Language ====================
+
+    @property
+    def language(self) -> str:
+        """Language code for UI translations: 'system', 'en', 'es', etc."""
+        return self._language
+
+    @language.setter
+    def language(self, value: str) -> None:
+        if self._language != value:
+            self._language = value
+            self._settings.setValue("language", value)
+            self.language_changed.emit(value)
+            logger.debug(f"Setting changed: language={value}")
 
     # ==================== Batch Operations ====================
 

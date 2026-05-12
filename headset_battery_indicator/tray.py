@@ -85,10 +85,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         if not self.headsetcontrol_path:
             logger.critical("HeadsetControl binary not found. Functionality disabled.")
             self.send_notification(
-                "Dependency Error",
-                "HeadsetControl binary not found. Please install it.",
+                self.tr("Dependency Error"),
+                self.tr("HeadsetControl binary not found. Please install it."),
             )
-            self.setToolTip("ERROR: HeadsetControl not found.")
+            self.setToolTip(self.tr("ERROR: HeadsetControl not found."))
 
         # Defer startup commands so the tray icon appears immediately.
         # singleShot(0) fires on the first event-loop tick, after __init__ returns.
@@ -151,22 +151,22 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         """Build the right-click context menu."""
 
         # Info (read-only labels)
-        self.info_name_action = QAction("Device: ...")
+        self.info_name_action = QAction(self.tr("Device: ..."))
         self.info_name_action.setEnabled(False)
         self.menu.addAction(self.info_name_action)
 
-        self.info_status_action = QAction("Status: ...")
+        self.info_status_action = QAction(self.tr("Status: ..."))
         self.info_status_action.setEnabled(False)
         self.menu.addAction(self.info_status_action)
         self.menu.addSeparator()
 
         # Preferences
-        pref_action = QAction("Preferences...", self)
+        pref_action = QAction(self.tr("Preferences..."), self)
         pref_action.triggered.connect(self.open_preferences)
         self.menu.addAction(pref_action)
 
         # Notifications
-        self.notify_action = QAction("Notify on low battery", self)
+        self.notify_action = QAction(self.tr("Notify on low battery"), self)
         self.notify_action.setCheckable(True)
         self.notify_action.setChecked(self.app_settings.notify_enabled)
         self.notify_action.toggled.connect(self.on_notify_toggled)
@@ -175,28 +175,34 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         # Device controls
         self.menu.addSeparator()
 
-        self.lights_action = QAction("Enable Headset Lights", self)
+        self.lights_action = QAction(self.tr("Enable Headset Lights"), self)
         self.lights_action.setCheckable(True)
         self.lights_action.setChecked(self.app_settings.lights_enabled)
         self.lights_action.toggled.connect(self.on_lights_toggled)
         self.menu.addAction(self.lights_action)
 
         self.sidetone_menu = self._make_level_menu(
-            "Set Sidetone Level",
-            {"Off": 0, "Low": 32, "Medium": 64, "High": 96, "Max": 128},
+            self.tr("Set Sidetone Level"),
+            {
+                self.tr("Off"): 0,
+                self.tr("Low"): 32,
+                self.tr("Medium"): 64,
+                self.tr("High"): 96,
+                self.tr("Max"): 128,
+            },
             self.app_settings.sidetone_level,
             self.on_sidetone_changed,
         )
         self.menu.addMenu(self.sidetone_menu)
 
         self.chatmix_menu = self._make_level_menu(
-            "Set ChatMix Level",
+            self.tr("Set ChatMix Level"),
             {
-                "Game Max (0)": 0,
-                "Game Bias (32)": 32,
-                "Center (64)": 64,
-                "Chat Bias (96)": 96,
-                "Chat Max (128)": 128,
+                self.tr("Game Max (0)"): 0,
+                self.tr("Game Bias (32)"): 32,
+                self.tr("Center (64)"): 64,
+                self.tr("Chat Bias (96)"): 96,
+                self.tr("Chat Max (128)"): 128,
             },
             self.app_settings.chatmix_level,
             self.on_chatmix_changed,
@@ -204,8 +210,14 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.menu.addMenu(self.chatmix_menu)
 
         self.inactivetime_menu = self._make_level_menu(
-            "Set Auto-Off Time (Min)",
-            {"Disabled (0)": 0, "10 min": 10, "30 min": 30, "60 min": 60, "90 min": 90},
+            self.tr("Set Auto-Off Time (Min)"),
+            {
+                self.tr("Disabled (0)"): 0,
+                self.tr("10 min"): 10,
+                self.tr("30 min"): 30,
+                self.tr("60 min"): 60,
+                self.tr("90 min"): 90,
+            },
             self.app_settings.inactive_time,
             self.on_inactivetime_changed,
         )
@@ -214,22 +226,22 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         # Debug tools (only in debug mode)
         if self.debug_mode:
             self.menu.addSeparator()
-            debug_menu = QMenu("Debug & Logs", self.menu)
-            action_show = QAction("Show Log Folder", self.menu)
+            debug_menu = QMenu(self.tr("Debug & Logs"), self.menu)
+            action_show = QAction(self.tr("Show Log Folder"), self.menu)
             action_show.triggered.connect(self.open_log_folder)
             debug_menu.addAction(action_show)
-            action_clear = QAction("Clear Log File", self)
+            action_clear = QAction(self.tr("Clear Log File"), self)
             action_clear.triggered.connect(self.clear_log_file)
             debug_menu.addAction(action_clear)
             self.menu.addMenu(debug_menu)
 
         # Footer actions
-        refresh_action = QAction("🔄 Update Status Now", self)
+        refresh_action = QAction(self.tr("🔄 Update Status Now"), self)
         refresh_action.triggered.connect(self.update_status)
         self.menu.addAction(refresh_action)
 
         self.menu.addSeparator()
-        quit_action = QAction("Exit", self)
+        quit_action = QAction(self.tr("Exit"), self)
         quit_action.triggered.connect(QApplication.instance().quit)
         self.menu.addAction(quit_action)
 
@@ -284,10 +296,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             with open(LOG_FILE, "w") as f:
                 f.truncate(0)
             logger.info("Log file cleared.")
-            self.send_notification("Logs", "Log file cleared successfully.")
+            self.send_notification(self.tr("Logs"), self.tr("Log file cleared successfully."))
         except OSError as e:
             logger.error(f"Failed to clear log file: {e}")
-            self.send_notification("Error", "Could not clear log file.")
+            self.send_notification(self.tr("Error"), self.tr("Could not clear log file."))
 
     # ------------------------------------------------------------------ #
     # Device commands
@@ -317,8 +329,8 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired) as e:
             logger.error(f"Command failed: {' '.join(command)} — {e}")
             self.send_notification(
-                "Headset Command Failed",
-                f"Failed to run: {' '.join(command)}\nIs it connected? Check logs.",
+                self.tr("Headset Command Failed"),
+                self.tr("Failed to run: {}\nIs it connected? Check logs.").format(" ".join(command)),
             )
 
     def apply_saved_settings(self) -> None:
@@ -420,18 +432,18 @@ class HeadsetBatteryTray(QSystemTrayIcon):
 
         if data["status"] == "unavailable":
             self.setIcon(self.icon_renderer.render(0, False))
-            self.setToolTip("Headset: Powered Off")
-            self.info_name_action.setText("Headset")
-            self.info_status_action.setText("Status: Powered Off")
+            self.setToolTip(self.tr("Headset: Powered Off"))
+            self.info_name_action.setText(self.tr("Headset"))
+            self.info_status_action.setText(self.tr("Status: Powered Off"))
             self.notified_low_battery = False
             return
 
         if data["status"] == "error":
             self.setIcon(self.icon_renderer.render(0, False, error=True))
             if data.get("error") != "Binary Missing":
-                self.setToolTip(f"Headset: {data['error']}")
-                self.info_name_action.setText("Headset")
-                self.info_status_action.setText(f"Status: {data['error']}")
+                self.setToolTip(self.tr("Headset: {}").format(data["error"]))
+                self.info_name_action.setText(self.tr("Headset"))
+                self.info_status_action.setText(self.tr("Status: {}").format(data["error"]))
             self.notified_low_battery = False
             return
 
@@ -450,18 +462,19 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             if not self.notified_low_battery:
                 logger.warning(f"Low battery threshold reached: {level_str}")
                 self.send_notification(
-                    "Low Headset Battery",
-                    f"{device_name} is at {level_str}.",
+                    self.tr("Low Headset Battery"),
+                    self.tr("{} is at {}.").format(device_name, level_str),
                 )
                 self.run_headset_command(["-n", "1"])
                 self.notified_low_battery = True
         elif level > self.app_settings.notify_threshold:
             self.notified_low_battery = False
 
-        tooltip_status = f"{'Charging' if is_charging else 'Discharging'} ({level_str})"
-        self.setToolTip(f"{device_name}\nStatus: {tooltip_status}")
+        charge_str = self.tr("Charging ({})") if is_charging else self.tr("Discharging ({})")
+        tooltip_status = charge_str.format(level_str)
+        self.setToolTip("{}\n{}".format(device_name, self.tr("Status: {}").format(tooltip_status)))
         self.info_name_action.setText(device_name)
-        self.info_status_action.setText(f"Status: {tooltip_status}")
+        self.info_status_action.setText(self.tr("Status: {}").format(tooltip_status))
 
     # ------------------------------------------------------------------ #
     # Debug REPL
