@@ -19,7 +19,8 @@ Works on **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desk
 - [Installation](#installation)
   - [Option 1: AppImage (Recommended)](#option-1-appimage-recommended)
   - [Option 2: Fedora COPR](#option-2-fedora-copr)
-  - [Option 3: From Source](#option-3-from-source)
+  - [Option 3: Arch Linux (AUR)](#option-3-arch-linux-aur)
+  - [Option 4: From Source](#option-4-from-source)
 - [Usage](#usage)
 - [Command-Line Options](#command-line-options)
 - [Autostart](#autostart)
@@ -83,7 +84,21 @@ sudo dnf install headset-battery-indicator
 
 ---
 
-### Option 3: From Source
+### Option 3: Arch Linux (AUR)
+
+Install using your AUR helper of choice:
+
+```bash
+yay -S headset-battery-indicator-git
+# or
+paru -S headset-battery-indicator-git
+```
+
+> Community-maintained [AUR package](https://aur.archlinux.org/packages/headset-battery-indicator-git) by [@segarra99](https://github.com/segarra99).
+
+---
+
+### Option 4: From Source
 
 1. **Install system dependencies:**
 
