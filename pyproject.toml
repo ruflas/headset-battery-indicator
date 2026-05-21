@@ -24,7 +24,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Environment :: X11 Applications :: Qt",
 ]
-# Aquí le dices a pip qué dependencias instalar
 dependencies = [
     "PySide6",
 ]
@@ -39,35 +38,26 @@ testpaths = ["tests"]
 
 headset-battery-indicator = "headset_battery_indicator.__main__:main"
 
-# --- NUEVA SECCIÓN PARA BRIEFCASE ---
 [tool.briefcase]
 project_name = "Headset Battery Indicator"
 bundle = "dev.ruflas"
 version = "2.2.1"
 app_name = "headset_battery_indicator"
 
-# Define la aplicación
 [tool.briefcase.app.headset-battery-indicator]
 
 formal_name = "Headset Battery Indicator"
 description = "A system tray icon to monitor headset battery levels"
 
-# El script principal
 sources = ["headset_battery_indicator", "icons"]
-
-# Dependencias de Python
 requires = [
     "PySide6",
 ]
 
-# --- Configuración del AppImage de Linux ---
 [tool.briefcase.app.headset-battery-indicator.linux.appimage]
-# Dependencias del sistema que Qt necesita (NOMBRES PARA YUM/FEDORA)
 system_requires = [
-    "pulseaudio-libs", 
-    "mesa-libGL", 
+    "pulseaudio-libs",
+    "mesa-libGL",
     "glib2"
 ]
-
-# SDK de Linux (Ubuntu 20.04)
 manylinux = "manylinux_2_28"
