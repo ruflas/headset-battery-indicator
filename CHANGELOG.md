@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.1 (2026-05-21)
+- **Feat:** Internationalization (i18n) — all UI strings are now translatable; Spanish translation included.
+- **Feat:** Language selector in Preferences (detects available translations automatically; restart required).
+- **Feat:** "When disconnected" icon style in Preferences — choose between empty battery (default), error/X icon, or hiding the tray icon entirely (closes [#7](https://github.com/ruflas/headset-battery-indicator/issues/7)).
+- **Fix:** Translation loading now uses the `QLocale` overload of `QTranslator::load()` for correct `es_ES` → `es` fallback.
+- **Fix:** Tray icon visibility is restored automatically when the headset reconnects after being in "hide" mode.
+- **Fix:** Orientation preference no longer breaks when the UI language changes (value stored internally in English, displayed in the active language).
+- **Chore:** RPM package renamed back to `headset-battery-indicator` (was incorrectly named `python-headset-battery-indicator`); added `Obsoletes`/`Provides` for seamless upgrade.
+- **CI:** Workflow now builds AppImage (Linux) and `.exe` (Windows) on tag push and uploads them automatically to the GitHub Release.
+
 ## 2.2.0 (2026-05-02)
 - **Feat:** Configurable poll interval (10–300 s, default 60 s) in Preferences dialog.
 - **Feat:** Notification threshold now a free-range SpinBox (5–95 %) instead of five fixed presets; moved from tray menu to Preferences dialog.

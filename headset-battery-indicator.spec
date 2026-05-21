@@ -1,5 +1,5 @@
 Name:           headset-battery-indicator
-Version:        2.2.0
+Version:        2.2.1
 Release:        1%{?dist}
 Summary:        System tray application for monitoring USB headsets via HeadsetControl
 
@@ -67,6 +67,13 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/applications/headset-battery-indicator.desktop
 
 %changelog
+* Wed May 21 2026 Ruflas <ruflas@ruflas.dev> - 2.2.1-1
+- Add internationalization (i18n) with Spanish translation
+- Add language selector in Preferences dialog
+- Add disconnected icon style preference (empty/error/hide)
+- Fix QTranslator locale fallback (es_ES -> es)
+- Rename package back to headset-battery-indicator, add Obsoletes
+
 * Sun May 04 2026 Ruflas <ruflas@ruflas.dev> - 2.2.0-1
 - Bump to v2.2.0: Preferences Overhaul & Architecture Refactor
 - Migrate to modern pyproject RPM macros (pyproject_wheel, pyproject_install)

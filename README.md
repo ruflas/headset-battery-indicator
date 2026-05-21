@@ -32,10 +32,11 @@ Works on **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desk
 
 - **Dynamic Tray Icon** — Live battery percentage and charging state rendered in real time.
 - **Low-Battery Notifications** — Desktop alerts with optional headset sound when battery drops below your threshold.
-- **Preferences Dialog** — Customize icon colors, orientation, scale, text overlay, poll interval, and notification threshold.
+- **Preferences Dialog** — Customize icon colors, orientation, scale, text overlay, poll interval, notification threshold, disconnected icon style, and language.
 - **Device Control** — Toggle LEDs, adjust sidetone, set ChatMix level, and configure auto power-off time.
 - **Persistent Configuration** — All preferences are saved between sessions automatically.
 - **Non-Blocking Polling** — Hardware queries run in a background thread; the UI never freezes.
+- **Internationalization** — UI is fully translatable; Spanish included. Language selectable in Preferences.
 - **Debug Mode** — Interactive console with live log output for troubleshooting.
 
 ---
@@ -55,9 +56,11 @@ Works on **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desk
 
 ## 🚀 Installation
 
-### Option 1: AppImage (Recommended)
+### Option 1: AppImage / Windows EXE (Recommended)
 
 No need to install Python or PySide6 — just headsetcontrol.
+
+Download the latest **AppImage** (Linux) or **EXE** (Windows) from the [Releases page](https://github.com/ruflas/headset-battery-indicator/releases/latest).
 
 1. **Download** the latest AppImage from the [Releases page](https://github.com/ruflas/headset-battery-indicator/releases/latest).
 
@@ -152,6 +155,8 @@ Open via the tray menu → **Preferences**. From here you can configure:
 - Percentage text overlay
 - Notification threshold (5–95%)
 - Poll interval (10–300 seconds)
+- **When disconnected** — choose between empty battery (default), error/X icon, or hiding the tray icon
+- **Language** — select UI language; Spanish and English included (restart required)
 
 All settings take effect immediately and are saved automatically.
 
