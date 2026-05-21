@@ -240,5 +240,21 @@ Is it connected? Check logs.</source>
         <source>Poll Interval:</source>
         <translation>Intervalo de consulta:</translation>
     </message>
+    <message>
+        <source>When disconnected:</source>
+        <translation>Al desconectarse:</translation>
+    </message>
+    <message>
+        <source>Empty battery (0%)</source>
+        <translation>Batería vacía (0%)</translation>
+    </message>
+    <message>
+        <source>Error / X icon</source>
+        <translation>Icono de error / X</translation>
+    </message>
+    <message>
+        <source>Hide tray icon</source>
+        <translation>Ocultar icono del sistema</translation>
+    </message>
 </context>
 </TS>

@@ -431,7 +431,15 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.last_battery_data = data
 
         if data["status"] == "unavailable":
-            self.setIcon(self.icon_renderer.render(0, False))
+            style = self.app_settings.disconnected_style
+            if style == "hide":
+                self.setVisible(False)
+            else:
+                self.setVisible(True)
+                if style == "error":
+                    self.setIcon(self.icon_renderer.render(0, False, error=True))
+                else:
+                    self.setIcon(self.icon_renderer.render(0, False))
             self.setToolTip(self.tr("Headset: Powered Off"))
             self.info_name_action.setText(self.tr("Headset"))
             self.info_status_action.setText(self.tr("Status: Powered Off"))
@@ -452,6 +460,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         device_name: str = data["name"]
         is_charging: bool = data["is_charging"]
 
+        self.setVisible(True)
         self.setIcon(self.icon_renderer.render(level, is_charging))
 
         if (

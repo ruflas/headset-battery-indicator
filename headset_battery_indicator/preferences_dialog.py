@@ -98,6 +98,15 @@ class PreferencesDialog(QDialog):
         self.spin_poll.setSuffix(self.tr(" sec"))
         form.addRow(self.tr("Poll Interval:"), self.spin_poll)
 
+        self._disconnected_values = ["empty", "error", "hide"]
+        self.combo_disconnected = QComboBox()
+        self.combo_disconnected.addItems([
+            self.tr("Empty battery (0%)"),
+            self.tr("Error / X icon"),
+            self.tr("Hide tray icon"),
+        ])
+        form.addRow(self.tr("When disconnected:"), self.combo_disconnected)
+
         self._lang_codes = []
         self.combo_lang = QComboBox()
         for code, name in available_languages():
@@ -129,6 +138,8 @@ class PreferencesDialog(QDialog):
         self.chk_show_text.setChecked(self.app_settings.icon_show_text)
         self.spin_threshold.setValue(self.app_settings.notify_threshold)
         self.spin_poll.setValue(self.app_settings.poll_interval)
+        disc_idx = self._disconnected_values.index(self.app_settings.disconnected_style) if self.app_settings.disconnected_style in self._disconnected_values else 0
+        self.combo_disconnected.setCurrentIndex(disc_idx)
         lang_idx = self._lang_codes.index(self.app_settings.language) if self.app_settings.language in self._lang_codes else 0
         self.combo_lang.setCurrentIndex(lang_idx)
 
@@ -169,6 +180,7 @@ class PreferencesDialog(QDialog):
         self.app_settings.icon_show_text = self.chk_show_text.isChecked()
         self.app_settings.notify_threshold = self.spin_threshold.value()
         self.app_settings.poll_interval = self.spin_poll.value()
+        self.app_settings.disconnected_style = self._disconnected_values[self.combo_disconnected.currentIndex()]
         self.app_settings.language = self._lang_codes[self.combo_lang.currentIndex()]
 
         self.settings_saved.emit()
