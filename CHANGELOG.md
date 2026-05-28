@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.2 (2026-05-28)
+- **Feat:** Version menu item in the tray context menu — shows the current version (e.g. `v2.2.2`) and opens the GitHub releases page on click, so users can easily check for updates.
+- **Fix:** Windows EXE now uses the correct headset icon instead of the generic PyInstaller default; CI converts `headset-battery-indicator.png` to `.ico` with Pillow and passes it to PyInstaller via `--icon`.
+
 ## 2.2.1 (2026-05-21)
 - **Feat:** Internationalization (i18n) — all UI strings are now translatable; Spanish translation included.
 - **Feat:** Language selector in Preferences (detects available translations automatically; restart required).

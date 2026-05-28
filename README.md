@@ -37,6 +37,7 @@ Works on **KDE Plasma**, **GNOME**, **XFCE**, **Cinnamon**, and other Linux desk
 - **Persistent Configuration** — All preferences are saved between sessions automatically.
 - **Non-Blocking Polling** — Hardware queries run in a background thread; the UI never freezes.
 - **Internationalization** — UI is fully translatable; Spanish included. Language selectable in Preferences.
+- **Version Menu Item** — Current version shown in the tray menu; click to open the GitHub releases page and check for updates.
 - **Debug Mode** — Interactive console with live log output for troubleshooting.
 
 ---

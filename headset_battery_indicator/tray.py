@@ -19,6 +19,7 @@ from PySide6.QtCore import QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
+from . import __version__
 from .icon_renderer import BatteryIconRenderer
 from .preferences_dialog import PreferencesDialog
 from .settings import AppSettings
@@ -241,6 +242,14 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.menu.addAction(refresh_action)
 
         self.menu.addSeparator()
+        version_action = QAction(f"v{__version__}", self)
+        version_action.triggered.connect(
+            lambda: QDesktopServices.openUrl(
+                QUrl("https://github.com/ruflas/headset-battery-indicator/releases")
+            )
+        )
+        self.menu.addAction(version_action)
+
         quit_action = QAction(self.tr("Exit"), self)
         quit_action.triggered.connect(QApplication.instance().quit)
         self.menu.addAction(quit_action)

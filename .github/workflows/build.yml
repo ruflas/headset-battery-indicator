@@ -80,8 +80,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller PySide6
+          pip install pyinstaller PySide6 pillow
           pip install --no-deps -e .
+
+      - name: Convert icon to .ico
+        run: |
+          python -c "
+          from PIL import Image
+          img = Image.open('headset-battery-indicator.png')
+          img.save('headset-battery-indicator.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])
+          "
 
       - name: Build Windows EXE
         run: >
@@ -89,6 +97,7 @@ jobs:
           --onefile
           --windowed
           --name headset-battery-indicator
+          --icon headset-battery-indicator.ico
           --add-data "headset_battery_indicator/translations;headset_battery_indicator/translations"
           run.py
 
