@@ -87,7 +87,7 @@ jobs:
         run: |
           python -c "
           from PIL import Image
-          img = Image.open('headset-battery-indicator.png')
+          img = Image.open('headset-battery-indicator.png').convert('RGBA')
           img.save('headset-battery-indicator.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])
           "
 
