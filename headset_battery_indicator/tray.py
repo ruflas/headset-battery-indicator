@@ -21,6 +21,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import __version__
 from .icon_renderer import BatteryIconRenderer
+from .paths import LOG_DIR, LOG_FILE
 from .preferences_dialog import PreferencesDialog
 from .settings import AppSettings
 from .worker import BatteryWorker
@@ -28,12 +29,6 @@ from .worker import BatteryWorker
 logger = logging.getLogger(__name__)
 
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
-
-LOG_DIR = os.path.join(
-    os.path.expanduser("~"),
-    ".local", "share", "HeadsetBatteryIndicator", "logs",
-)
-LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 
 class HeadsetBatteryTray(QSystemTrayIcon):

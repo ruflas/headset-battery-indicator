@@ -247,8 +247,12 @@ Launch with `-debug` for live log output and an interactive console:
 python -m headset_battery_indicator -debug
 ```
 
-The rotating log file is always written to:
+The application runs in portable mode: settings (`settings.ini`) and the
+rotating log file are stored in a `logs/` folder next to the executable
+(or next to the project root when running from source), so the app leaves
+no trace on the host system.
 
 ```
-~/.local/share/HeadsetBatteryIndicator/logs/app.log
+<app folder>/settings.ini
+<app folder>/logs/app.log
 ```

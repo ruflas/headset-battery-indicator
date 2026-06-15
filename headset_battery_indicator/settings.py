@@ -14,6 +14,8 @@ from typing import Optional
 
 from PySide6.QtCore import QSettings, Signal, QObject
 
+from .paths import SETTINGS_FILE
+
 logger = logging.getLogger(__name__)
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -52,7 +54,7 @@ class AppSettings(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._settings = QSettings()
+        self._settings = QSettings(SETTINGS_FILE, QSettings.Format.IniFormat)
         self._load_all()
 
     def _load_all(self) -> None:
