@@ -54,7 +54,10 @@ class AppSettings(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._settings = QSettings(SETTINGS_FILE, QSettings.Format.IniFormat)
+        if SETTINGS_FILE:
+            self._settings = QSettings(SETTINGS_FILE, QSettings.Format.IniFormat)
+        else:
+            self._settings = QSettings()
         self._load_all()
 
     def _load_all(self) -> None:

@@ -3,28 +3,33 @@ headset_battery_indicator.paths
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Filesystem locations for settings and logs.
 
-The application runs in portable mode: settings and logs are stored next
-to the executable (or the project root when run from source) instead of
-the Windows registry or the user's home directory, so it leaves no trace
-on the host system.
+When running as a frozen Windows executable (the standalone .exe built
+with PyInstaller), the app operates in portable mode: settings and logs
+are stored next to the executable, so it can run from a USB drive without
+leaving any trace on the host system.
+
+On Linux, macOS, and when running from source (including Fedora/AUR
+packages), settings and logs use the usual per-user locations:
+QSettings' native format (e.g. ~/.config on Linux, the registry on
+Windows) for settings, and ~/.local/share/HeadsetBatteryIndicator/logs
+for logs.
 """
 
 import os
 import sys
 
+PORTABLE = sys.platform == "win32" and getattr(sys, "frozen", False)
 
-def get_app_dir() -> str:
-    """Return the directory where settings and logs should be stored.
+if PORTABLE:
+    APP_DIR = os.path.dirname(sys.executable)
+    SETTINGS_FILE = os.path.join(APP_DIR, "settings.ini")
+    LOG_DIR = os.path.join(APP_DIR, "logs")
+else:
+    APP_DIR = None
+    SETTINGS_FILE = None
+    LOG_DIR = os.path.join(
+        os.path.expanduser("~"),
+        ".local", "share", "HeadsetBatteryIndicator", "logs",
+    )
 
-    When frozen by PyInstaller, this is the directory containing the
-    executable. Otherwise, it's the project root (parent of this package).
-    """
-    if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-APP_DIR = get_app_dir()
-SETTINGS_FILE = os.path.join(APP_DIR, "settings.ini")
-LOG_DIR = os.path.join(APP_DIR, "logs")
 LOG_FILE = os.path.join(LOG_DIR, "app.log")

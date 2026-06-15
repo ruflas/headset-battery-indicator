@@ -247,12 +247,20 @@ Launch with `-debug` for live log output and an interactive console:
 python -m headset_battery_indicator -debug
 ```
 
-The application runs in portable mode: settings (`settings.ini`) and the
-rotating log file are stored in a `logs/` folder next to the executable
-(or next to the project root when running from source), so the app leaves
-no trace on the host system.
+**Windows standalone .exe:** the app runs in portable mode — settings
+(`settings.ini`) and the rotating log file are stored in a `logs/` folder
+next to the executable, so it leaves no trace on the host system and can
+run from a USB drive:
 
 ```
 <app folder>/settings.ini
 <app folder>/logs/app.log
+```
+
+**Linux, macOS, and source/package installs (incl. Fedora/AUR):** settings
+use the platform's native location (e.g. `~/.config` on Linux), and the
+log file is written to:
+
+```
+~/.local/share/HeadsetBatteryIndicator/logs/app.log
 ```
