@@ -29,8 +29,8 @@ def available_languages() -> list:
                 continue
             name = QLocale(code).nativeLanguageName() or code
             if name:
-                name = name[0].upper() + name[1:]
-            entries.append((code, name))
+                name = name[0].upper() + name[1:].split(" de ")[0]
+            entries.append((code, f"{name} ({code.upper()})"))
     return entries
 
 
