@@ -27,7 +27,9 @@ def available_languages() -> list:
             code = m.group(1)
             if code == "en":
                 continue
-            name = QLocale(code).nativeLanguageName().capitalize() or code
+            name = QLocale(code).nativeLanguageName() or code
+            if name:
+                name = name[0].upper() + name[1:]
             entries.append((code, name))
     return entries
 
