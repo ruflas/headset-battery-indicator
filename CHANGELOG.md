@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.0 (2026-06-15)
+- **Fix:** Spanish locale name in the language picker no longer shows as "Español de españa"; only the first letter is capitalized (closes [#8](https://github.com/ruflas/headset-battery-indicator/issues/8)).
+- **Feat:** Portable mode — settings (`settings.ini`) and logs (`logs/app.log`) are now stored next to the executable (or project root when run from source) instead of the Windows registry / `~/.local/share`, allowing the app to run from a USB drive with no trace on the host (closes [#9](https://github.com/ruflas/headset-battery-indicator/issues/9)).
+
 ## 2.2.2 (2026-05-28)
 - **Feat:** Version menu item in the tray context menu — shows the current version (e.g. `v2.2.2`) and opens the GitHub releases page on click, so users can easily check for updates.
 - **Fix:** Windows EXE now uses the correct headset icon instead of the generic PyInstaller default; CI converts `headset-battery-indicator.png` to `.ico` with Pillow and passes it to PyInstaller via `--icon`.
