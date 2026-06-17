@@ -21,7 +21,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import __version__
 from .icon_renderer import BatteryIconRenderer
-from .paths import LOG_DIR, LOG_FILE
+from .paths import LOG_FILE
 from .preferences_dialog import PreferencesDialog
 from .settings import AppSettings
 from .worker import BatteryWorker
@@ -291,9 +291,10 @@ class HeadsetBatteryTray(QSystemTrayIcon):
     # ------------------------------------------------------------------ #
 
     def open_log_folder(self) -> None:
-        os.makedirs(LOG_DIR, exist_ok=True)
-        logger.info(f"Opening log folder: {LOG_DIR}")
-        QDesktopServices.openUrl(QUrl.fromLocalFile(LOG_DIR))
+        log_dir = os.path.dirname(LOG_FILE)
+        os.makedirs(log_dir, exist_ok=True)
+        logger.info(f"Opening log folder: {log_dir}")
+        QDesktopServices.openUrl(QUrl.fromLocalFile(log_dir))
 
     def clear_log_file(self) -> None:
         try:

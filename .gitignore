@@ -12,5 +12,6 @@ headset-battery-indicator.ico
 .claude/
 .pytest_cache/
 context.txt
-logs/
 settings.ini
+HeadsetBatteryIndicator.log
+logs/

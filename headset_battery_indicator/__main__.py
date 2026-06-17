@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from .i18n import install_translator
 from .settings import AppSettings
-from .tray import HeadsetBatteryTray, LOG_DIR, LOG_FILE
+from .tray import HeadsetBatteryTray, LOG_FILE
 
 _MAX_LOG_BYTES = 10 * 1024 * 1024  # 10 MB
 _BACKUP_COUNT = 1
@@ -24,7 +24,7 @@ def setup_logging() -> None:
     (tray, worker, parsing, settings, icon_renderer) write to the same file.
     Safe to call multiple times — adds the handler at most once.
     """
-    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
     pkg_logger = logging.getLogger("headset_battery_indicator")
     pkg_logger.setLevel(logging.DEBUG)
