@@ -1,5 +1,5 @@
 Name:           headset-battery-indicator
-Version:        2.3.0
+Version:        2.3.1
 Release:        1%{?dist}
 Summary:        System tray application for monitoring USB headsets via HeadsetControl
 
@@ -67,6 +67,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/applications/headset-battery-indicator.desktop
 
 %changelog
+* Sat Jun 20 2026 Ruflas <ruflas@ruflas.dev> - 2.3.1-1
+- Fix delayed battery icon update on startup caused by startup commands blocking the GUI thread
+
 * Mon Jun 15 2026 Ruflas <ruflas@ruflas.dev> - 2.3.0-1
 - Fix Spanish language name capitalization in the language picker
 - Store settings and logs next to the executable for portable mode

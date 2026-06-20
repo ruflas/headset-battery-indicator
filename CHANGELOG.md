@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.1 (2026-06-20)
+- **Fix:** Battery icon no longer appears stuck at 0%/disconnected on startup. The 4 sequential `headsetcontrol` commands that apply saved settings (lights, sidetone, ChatMix, auto-off) were running on the GUI thread on the first event-loop tick, blocking delivery of the first battery check result until they finished. These now run in a dedicated background thread (`ApplySettingsWorker`).
+
 ## 2.3.0 (2026-06-15)
 - **Fix:** Spanish locale name in the language picker now shows as "Español (ES)" instead of "Español de españa" (closes [#8](https://github.com/ruflas/headset-battery-indicator/issues/8)).
 - **Feat:** Portable mode for the Windows standalone .exe — settings (`settings.ini`) and logs (`logs/app.log`) are now stored next to the executable instead of the Windows registry, allowing the app to run from a USB drive with no trace on the host. Linux, macOS, and source/package installs (incl. Fedora/AUR) keep using the platform's native config and `~/.local/share` log locations (closes [#9](https://github.com/ruflas/headset-battery-indicator/issues/9)).
