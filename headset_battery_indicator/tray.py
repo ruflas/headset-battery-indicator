@@ -24,7 +24,7 @@ from .icon_renderer import BatteryIconRenderer
 from .paths import LOG_FILE
 from .preferences_dialog import PreferencesDialog
 from .settings import AppSettings
-from .worker import BatteryWorker
+from .worker import ApplySettingsWorker, BatteryWorker
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,7 @@ class HeadsetBatteryTray(QSystemTrayIcon):
         self.last_battery_data: Optional[Dict[str, Any]] = None
         self.notified_low_battery = False  # must be set before first update_status()
         self._worker: Optional[BatteryWorker] = None  # must be set before first update_status()
+        self._apply_settings_worker: Optional[ApplySettingsWorker] = None
         self.app_settings = app_settings
 
         if debug_mode:
@@ -339,16 +340,36 @@ class HeadsetBatteryTray(QSystemTrayIcon):
             )
 
     def apply_saved_settings(self) -> None:
-        """Apply all persisted settings to the headset at startup."""
+        """Apply all persisted settings to the headset at startup.
+
+        Runs in a background thread so these sequential subprocess calls
+        never block the GUI event loop and delay delivery of the first
+        BatteryWorker result (which is queued across threads by Qt).
+        """
         if not self.headsetcontrol_path:
             logger.info("Skipping startup settings: binary not found.")
             return
 
         logger.info("Applying saved settings on startup.")
-        self.run_headset_command(["-l", "1" if self.app_settings.lights_enabled else "0"])
-        self.run_headset_command(["-s", str(self.app_settings.sidetone_level)])
-        self.run_headset_command(["-m", str(self.app_settings.chatmix_level)])
-        self.run_headset_command(["-i", str(self.app_settings.inactive_time)])
+        self._apply_settings_worker = ApplySettingsWorker(
+            self.headsetcontrol_path,
+            self.use_test_device,
+            self.app_settings.lights_enabled,
+            self.app_settings.sidetone_level,
+            self.app_settings.chatmix_level,
+            self.app_settings.inactive_time,
+        )
+        self._apply_settings_worker.finished_with_errors.connect(self._on_apply_settings_finished)
+        self._apply_settings_worker.start()
+
+    def _on_apply_settings_finished(self, failed_commands: list) -> None:
+        if failed_commands:
+            self.send_notification(
+                self.tr("Headset Command Failed"),
+                self.tr("Failed to run: {}\nIs it connected? Check logs.").format(
+                    "; ".join(failed_commands)
+                ),
+            )
         logger.info(
             f"Startup settings applied: "
             f"Lights={self.app_settings.lights_enabled}, "
