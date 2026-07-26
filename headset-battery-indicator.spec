@@ -10,7 +10,7 @@ Source0:        https://github.com/ruflas/headset-battery-indicator/archive/refs
 BuildArch:      noarch
 
 Obsoletes:      python-headset-battery-indicator < 2.3.0
-Provides:       python-headset-battery-indicator = %{version}
+Provides:       python-headset-battery-indicator = %{version}-%{release}
 
 BuildRequires:  python3-devel
 BuildRequires:  pyproject-rpm-macros
@@ -19,10 +19,6 @@ BuildRequires:  desktop-file-utils
 Requires:       headsetcontrol
 Requires:       python3-pyside6
 Requires:       xdg-utils
-Requires(post): desktop-file-utils
-Requires(postun): desktop-file-utils
-Requires(post): hicolor-icon-theme
-Requires(postun): hicolor-icon-theme
 
 %description
 Headset Battery Indicator is a Python/Qt system tray application for monitoring
@@ -49,15 +45,6 @@ install -Dm0644 headset-battery-indicator.png \
 desktop-file-install \
     --dir=%{buildroot}%{_datadir}/applications \
     headset-battery-indicator.desktop
-
-%post
-update-desktop-database &> /dev/null || :
-touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
-gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
-
-%postun
-update-desktop-database &> /dev/null || :
-gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %files -f %{pyproject_files}
 %license LICENSE
