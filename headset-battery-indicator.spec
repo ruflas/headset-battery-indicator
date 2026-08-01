@@ -1,6 +1,6 @@
 Name:           headset-battery-indicator
 Version:        2.3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        System tray application for monitoring USB headsets via HeadsetControl
 
 License:        GPL-3.0-or-later
@@ -17,6 +17,7 @@ BuildRequires:  pyproject-rpm-macros
 BuildRequires:  desktop-file-utils
 
 Requires:       headsetcontrol
+Requires:       hicolor-icon-theme
 Requires:       python3-pyside6
 Requires:       xdg-utils
 
@@ -39,7 +40,7 @@ from the tray icon.
 %pyproject_install
 %pyproject_save_files headset_battery_indicator
 
-install -Dm0644 headset-battery-indicator.png \
+install -Dpm0644 headset-battery-indicator.png \
     %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/headset-battery-indicator.png
 
 desktop-file-install \
@@ -54,6 +55,10 @@ desktop-file-install \
 %{_datadir}/applications/headset-battery-indicator.desktop
 
 %changelog
+* Fri Aug 01 2026 Ruflas <ruflas@ruflas.dev> - 2.3.1-2
+- Add -p flag to install to preserve file timestamp (Fedora guidelines)
+- Add Requires: hicolor-icon-theme (needed for hicolor icon directory)
+
 * Sat Jun 20 2026 Ruflas <ruflas@ruflas.dev> - 2.3.1-1
 - Fix delayed battery icon update on startup caused by startup commands blocking the GUI thread
 
