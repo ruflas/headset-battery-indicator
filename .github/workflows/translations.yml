@@ -1,0 +1,48 @@
+name: Translations
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "headset_battery_indicator/translations/*.ts"
+  push:
+    branches: ["main"]
+    paths:
+      - "headset_battery_indicator/translations/*.ts"
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install PySide6
+        run: pip install PySide6
+
+      - name: Compile .ts to .qm
+        run: |
+          for ts in headset_battery_indicator/translations/*.ts; do
+            pyside6-lrelease "$ts"
+            echo "Compiled: $ts"
+          done
+
+      - name: Upload compiled translations
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-translations
+          path: headset_battery_indicator/translations/*.qm
+          retention-days: 7
+
+      - name: Commit compiled .qm files
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add headset_battery_indicator/translations/*.qm
+          git diff --cached --quiet || git commit -m "chore: compile translations to .qm"
+          git push
