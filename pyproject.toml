@@ -55,9 +55,27 @@ requires = [
 ]
 
 [tool.briefcase.app.headset-battery-indicator.linux.appimage]
+# The Qt xcb platform plugin needs the whole xcb/xkbcommon stack at runtime.
+# Whatever is not listed here is not installed in the build image, so
+# linuxdeploy cannot bundle it and the AppImage fails to start on a clean
+# system (libEGL comes from libglvnd-egl, not from mesa-libGL).
 system_requires = [
     "pulseaudio-libs",
     "mesa-libGL",
-    "glib2"
+    "glib2",
+    "libglvnd-egl",
+    "fontconfig",
+    "libxkbcommon",
+    "libxkbcommon-x11",
+    "libxcb",
+    "xcb-util",
+    "xcb-util-wm",
+    "xcb-util-image",
+    "xcb-util-keysyms",
+    "xcb-util-renderutil"
 ]
+# Qt 6.5+ also requires libxcb-cursor, which AlmaLinux 8 ships only in EPEL
+dockerfile_extra_content = """
+RUN yum install -y epel-release && yum install -y xcb-util-cursor
+"""
 manylinux = "manylinux_2_28"
