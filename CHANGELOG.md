@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.2 (2026-09-28)
+- **Fix:** The AppImage now bundles the Qt xcb runtime libraries it depends on (`libxkbcommon-x11`, `libxcb-cursor`, `libQt6XcbQpa` and the rest of the xcb stack). Without them the Qt platform plugin could not load and the application aborted at startup on any system that did not already provide them; where the host had `libxkbcommon-x11` while the AppImage bundled only `libxkbcommon`, the two copies clashed and it segfaulted instead.
+- No changes to the application itself. Fedora COPR and AUR builds are unaffected, as they get these libraries through `python3-pyside6`.
+
 ## 2.3.1 (2026-06-20)
 - **Fix:** Battery icon no longer appears stuck at 0%/disconnected on startup. The 4 sequential `headsetcontrol` commands that apply saved settings (lights, sidetone, ChatMix, auto-off) were running on the GUI thread on the first event-loop tick, blocking delivery of the first battery check result until they finished. These now run in a dedicated background thread (`ApplySettingsWorker`).
 

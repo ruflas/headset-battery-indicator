@@ -1,6 +1,6 @@
 Name:           headset-battery-indicator
-Version:        2.3.1
-Release:        2%{?dist}
+Version:        2.3.2
+Release:        1%{?dist}
 Summary:        System tray application for monitoring USB headsets via HeadsetControl
 
 License:        GPL-3.0-or-later
@@ -55,6 +55,10 @@ desktop-file-install \
 %{_datadir}/applications/headset-battery-indicator.desktop
 
 %changelog
+* Mon Sep 28 2026 Ruflas <ruflas@ruflas.dev> - 2.3.2-1
+- Bundle the Qt xcb runtime libraries in the AppImage (no change for RPM builds,
+  which get them through python3-pyside6)
+
 * Fri Aug 01 2026 Ruflas <ruflas@ruflas.dev> - 2.3.1-2
 - Add -p flag to install to preserve file timestamp (Fedora guidelines)
 - Add Requires: hicolor-icon-theme (needed for hicolor icon directory)
