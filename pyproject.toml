@@ -74,8 +74,12 @@ system_requires = [
     "xcb-util-keysyms",
     "xcb-util-renderutil"
 ]
-# Qt 6.5+ also requires libxcb-cursor, which AlmaLinux 8 ships only in EPEL
+# Qt 6.5+ also requires libxcb-cursor, which AlmaLinux 8 ships only in EPEL.
+# Briefcase inserts this after it switches to the unprivileged build user, so
+# it has to ask for root back and hand it over again.
 dockerfile_extra_content = """
+USER root
 RUN yum install -y epel-release && yum install -y xcb-util-cursor
+USER brutus
 """
 manylinux = "manylinux_2_28"
